@@ -1,7 +1,7 @@
 //import {DateTime} from "../core/index";
-//import {Event} from "../event/Event";
-//import {EventArgs} from "../eventArgs/EventArgs";
-//import {CancelEventArgs} from "../eventArgs/CancelEventArgs";
+import {Event} from "../event/Event";
+import {EventArgs} from "../eventArgs/EventArgs";
+import {CancelEventArgs} from "../eventArgs/CancelEventArgs";
 //import {assert, asFunction, asBoolean, clamp, isPrimitive, tryCast, asArray, asInt} from "../core";
 //import {ObservableArray} from "./ObservableArray";
 //import {IEditableCollectionView} from "../collections/interface/IEditableCollectionView";
@@ -15,7 +15,7 @@
 //import {SortDescription} from "./SortDescription";
 //import {NotifyCollectionChangedAction} from "../enum/collections/NotifyCollectionChangedAction";
 //import {CollectionViewGroup} from "./CollectionViewGroup";
-//import {EventEmitter} from "@angular/core";
+import {EventEmitter} from "@angular/core";
 //import {$$observable} from "rxjs/symbol/observable";
 import { of } from 'rxjs/observable/of';
 
@@ -204,5 +204,96 @@ get items(): any[] {
        // this._trackChanges = asBoolean(value);
     }
 
-   
+    /**
+     * Sets the specified item to be the current item in the view.
+     *
+     * @param item Item that will become current.
+     */
+    moveCurrentTo(item: any): boolean {
+        return this.moveCurrentToPosition(this._pgView.indexOf(item));
+    }
+
+    /**
+     * Sets the first item in the view as the current item.
+     */
+    moveCurrentToFirst(): boolean {
+        return this.moveCurrentToPosition(0);
+    }
+
+    /**
+     * Sets the last item in the view as the current item.
+     */
+    moveCurrentToLast(): boolean {
+        return this.moveCurrentToPosition(this._pgView.length - 1);
+    }
+
+    /**
+     * Sets the item after the current item in the view as the current item.
+     */
+    moveCurrentToNext(): boolean {
+        return this.moveCurrentToPosition(this._idx + 1);
+    }
+   moveCurrentToPosition(index: number): boolean {
+        if (index >= -1 && index < this._pgView.length) {
+            const e = new CancelEventArgs();
+            if (this._idx != index && this.onCurrentChanging(e)) {
+
+                // when moving away from current edit/new item, commit
+                if (this._edtItem && this._pgView[index] != this._edtItem) {
+                   // this.commitEdit();
+                }
+                if (this._newItem && this._pgView[index] != this._newItem) {
+                   // this.commitNew();
+                }
+
+                // update currency
+                this._idx = index;
+                this.onCurrentChanged();
+            }
+        }
+        return this._idx == index;
+    }
+  /**
+     * Occurs after the current item changes.
+     */
+    currentChanged = new EventEmitter();
+
+    /**
+     * Raises the @see:currentChanged event.
+     */
+    onCurrentChanged(e = EventArgs.empty) {
+        this.currentChanged.emit(e);
+    }
+	
+	currentChanging = new EventEmitter();
+
+    /**
+     * Raises the @see:currentChanging event.
+     *
+     * @param e @see:CancelEventArgs that contains the event data.
+     */
+    onCurrentChanging(e: CancelEventArgs): boolean {
+        this.currentChanging.emit(e);
+        return !e.cancel;
+    }
+ /**
+     * Gets or sets the current item in the view.
+     */
+    get currentItem(): any {
+        return this._pgView && this._idx > -1 && this._idx < this._pgView.length
+            ? this._pgView[this._idx]
+            : null;
+    }
+
+    set currentItem(value: any) {
+        this.moveCurrentTo(value);
+    }
+	
+	
+    /**
+     * Gets the ordinal position of the current item in the view.
+     */
+    get currentPosition(): number {
+        return this._idx;
+    }
 }

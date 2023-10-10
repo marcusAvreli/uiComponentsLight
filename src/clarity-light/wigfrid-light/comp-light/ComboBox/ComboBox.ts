@@ -2,18 +2,18 @@
 //import {Color} from '../../core';
 import {DropDown} from './../DropDown/DropDown'
 import {ListBox} from './../ListBox/ListBox'
-//import {hasItems} from '../../core';
+import {hasItems} from '../../core';
 //import {setSelectionRange} from  '../../core';
 //import {clamp} from  '../../core';
-//import {ICollectionView} from "../../collections/interface/ICollectionView";
-//import {asBoolean} from   '../../core';
+import {CollectionView} from "../../collections-light/CollectionView";
+import {asBoolean} from   '../../core';
 //import {asFunction} from   '../../core';
-//import {EventArgs} from "../../eventArgs/EventArgs";
+import {EventArgs} from "../../eventArgs/EventArgs";
 //import {CancelEventArgs} from "../../eventArgs/CancelEventArgs";
 //import {Key} from "../../enum/Key";
 //import {asNumber} from   '../../core';
-//import {asString} from   '../../core';
-//import {Event} from "../../event/Event";
+import {asString} from   '../../core';
+import {Event} from "../../event/Event";
 
 
 /**
@@ -64,8 +64,9 @@ export class ComboBox extends DropDown {
 	constructor(element: any, options?) {
 		super(element);
 console.log("combo_constructor_start");
-		this._lbx = new ListBox(this._dropDown);
+		
 		// handle IME
+		/*
 		this.addEventListener(this._tbx, 'compositionstart', () => {
 			this._composing = true;
 		});
@@ -73,6 +74,7 @@ console.log("combo_constructor_start");
 			this._composing = false;
 			this._setText(this.text, true);
 		});
+		*/
 			// initialize control options
 		this.initialize(options);
 		console.log("combo_constructor_finish");
@@ -95,6 +97,8 @@ _setText(text: string, fullMatch: boolean) {
 		text = text.toString();
 		super._setText(text, fullMatch);
 		console.log("combo_box_set_text_finish");
+		
+		this._settingText = false;
 
 }
 	/**
@@ -110,6 +114,112 @@ _setText(text: string, fullMatch: boolean) {
 	// create the drop-down element
 	_createDropDown() {
 		console.log("create drop down");
+		this._lbx = new ListBox(this._dropDown);
+			this._lbx.selectedIndexChanged.addHandler(() => {
+			this._updateBtn();
+			this.selectedIndex = this._lbx.selectedIndex;
+			this.onSelectedIndexChanged();
+		});
+
+		// update button display when item list changes
+		this._lbx.itemsChanged.addHandler(() => {
+			this._updateBtn();
+		});
+
+		// close the drop-down when the user clicks to select an item
+		this.addEventListener(this._dropDown, 'click', (e: MouseEvent) => {
+			if (e.target != this._dropDown) { // an item, not the list itself...
+				this.isDroppedDown = false;
+			}
+		});
+	}
+	get headerPath(): string {
+		return this._hdrPath;
+	}
+	set headerPath(value: string) {
+		this._hdrPath = asString(value);
+		const text = this.getDisplayText();
+		if (this.text != text) {
+			this._setText(text, true);
+		}
+	}
+		selectedIndexChanged = new Event();
+	/**
+	 * Raises the @see:selectedIndexChanged event.
+	 */
+	onSelectedIndexChanged(e?: EventArgs) {
+		this._updateBtn();
+		this.selectedIndexChanged.raise(this, e);
+	}
+	/**
+	 * Gets or sets the index of the currently selected item in the drop-down list.
+	 */
+	get selectedIndex(): number {
+		return this._lbx.selectedIndex;
+	}
+	set selectedIndex(value: number) {
+		if (value != this.selectedIndex) {
+			this._lbx.selectedIndex = value;
+		}
+		const text = this.getDisplayText(value);
+		if (this.text != text) {
+			this._setText(text, true);
+		}
+	}
+	get collectionView(): CollectionView {
+		return this._lbx.collectionView;
+	}
+	
+	getDisplayText(index = this.selectedIndex): string {
+
+		// get display text directly from the headerPath if that was specified
+		if (this.headerPath && index > -1 && hasItems(this.collectionView)) {
+			const item = this.collectionView.items[index][this.headerPath];
+            let text   = item != null ? item.toString() : '';
+			if (this.isContentHtml) {
+				if (!this._cvt) {
+					this._cvt = document.createElement('div');
+				}
+				this._cvt.innerHTML = text;
+				text = this._cvt.textContent;
+			}
+			return text;
+		}
+
+		// headerPath not specified, get text straight from the ListBox
+		return this._lbx.getDisplayText(index);
+	}
+	
+	
+	get isContentHtml(): boolean {
+		return this._lbx.isContentHtml;
+	}
+	set isContentHtml(value: boolean) {
+		if (value != this.isContentHtml) {
+			this._lbx.isContentHtml = asBoolean(value);
+			let text = this.getDisplayText();
+			if (this.text != text) {
+				this._setText(text, true);
+			}
+		}
+	}
+	/**
+	 * Gets or sets the item that is currently selected in the drop-down list.
+	 */
+	get selectedItem(): any {
+		return this._lbx.selectedItem;
+	}
+	set selectedItem(value: any) {
+		this._lbx.selectedItem = value;
+	}
+	/**
+	 * Gets or sets the value of the @see:selectedItem, obtained using the @see:selectedValuePath.
+	 */
+	get selectedValue(): any {
+		return this._lbx.selectedValue;
+	}
+	set selectedValue(value: any) {
+		this._lbx.selectedValue = value;
 	}
 
 }

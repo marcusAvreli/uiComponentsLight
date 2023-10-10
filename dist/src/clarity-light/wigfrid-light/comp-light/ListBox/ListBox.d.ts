@@ -1,4 +1,6 @@
 import { Control } from '../Control';
+import { EventArgs } from "../../eventArgs/EventArgs";
+import { Event } from "../../event/Event";
 import { CollectionView } from "../../collections-light/CollectionView";
 /**
  * The @see:ListBox control displays a list of items which may contain
@@ -39,19 +41,46 @@ export declare class ListBox extends Control {
      * @param options The JavaScript object containing initialization data for the control.
      */
     constructor(element: any, options?: any);
+    isContentHtml: boolean;
+    getDisplayText(index: number): string;
     private _click(e);
     /**
      * Refreshes the list.
      */
     refresh(): void;
+    readonly collectionView: CollectionView;
     selectedIndex: number;
     /**
      * Gets or sets the array or @see:ICollectionView object that contains the list items.
      */
     itemsSource: any;
+    private _cvCurrentChanged(sender, e);
+    /**
+     * Occurs when the list of items changes.
+     */
+    itemsChanged: Event;
+    /**
+     * Raises the @see:itemsChanged event.
+     */
+    onItemsChanged(e?: EventArgs): void;
+    selectedItem: any;
     private _populateList();
+    /**
+ * Occurs when the value of the @see:selectedIndex property changes.
+ */
+    selectedIndexChanged: Event;
+    /**
+     * Raises the @see:selectedIndexChanged event.
+     */
+    onSelectedIndexChanged(e?: EventArgs): void;
     /**
      * Highlights the selected item and scrolls it into view.
      */
     showSelection(): void;
+    selectedValue: any;
+    /**
+     * Gets or sets the name of the property used to get the @see:selectedValue
+     * from the @see:selectedItem.
+     */
+    selectedValuePath: string;
 }

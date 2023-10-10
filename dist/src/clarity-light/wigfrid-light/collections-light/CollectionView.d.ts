@@ -1,3 +1,6 @@
+import { EventArgs } from "../eventArgs/EventArgs";
+import { CancelEventArgs } from "../eventArgs/CancelEventArgs";
+import { EventEmitter } from "@angular/core";
 /**
  * Class that implements the @see:ICollectionView interface to expose data in
  * regular JavaScript arrays.
@@ -126,4 +129,46 @@ export declare class CollectionView {
      * Changes made directly to the data are not tracked.
      */
     trackChanges: boolean;
+    /**
+     * Sets the specified item to be the current item in the view.
+     *
+     * @param item Item that will become current.
+     */
+    moveCurrentTo(item: any): boolean;
+    /**
+     * Sets the first item in the view as the current item.
+     */
+    moveCurrentToFirst(): boolean;
+    /**
+     * Sets the last item in the view as the current item.
+     */
+    moveCurrentToLast(): boolean;
+    /**
+     * Sets the item after the current item in the view as the current item.
+     */
+    moveCurrentToNext(): boolean;
+    moveCurrentToPosition(index: number): boolean;
+    /**
+       * Occurs after the current item changes.
+       */
+    currentChanged: EventEmitter<{}>;
+    /**
+     * Raises the @see:currentChanged event.
+     */
+    onCurrentChanged(e?: EventArgs): void;
+    currentChanging: EventEmitter<{}>;
+    /**
+     * Raises the @see:currentChanging event.
+     *
+     * @param e @see:CancelEventArgs that contains the event data.
+     */
+    onCurrentChanging(e: CancelEventArgs): boolean;
+    /**
+        * Gets or sets the current item in the view.
+        */
+    currentItem: any;
+    /**
+     * Gets the ordinal position of the current item in the view.
+     */
+    readonly currentPosition: number;
 }

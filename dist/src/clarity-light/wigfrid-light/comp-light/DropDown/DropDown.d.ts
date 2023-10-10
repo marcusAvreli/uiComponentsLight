@@ -30,6 +30,7 @@ export declare class DropDown extends Control {
      * @param options The JavaScript object containing initialization data for the control.
      */
     constructor(element: any, options?: any);
+    _createDropDown(): void;
     /**
     * Gets the drop down element shown when the @see:isDroppedDown
     * property is set to true.

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgModule } from '@angular/core';
+import { EventEmitter, NgModule } from '@angular/core';
 
 /*
  * Copyright (c) 2016 VMware, Inc. All Rights Reserved.
@@ -221,10 +221,30 @@ function asBoolean(value, nullOK = false) {
     return value;
 }
 
+/**
+ * Base class for event arguments.
+ */
+class EventArgs {
+}
+/**
+ * Provides a value to use with events that do not have event data.
+ */
+EventArgs.empty = new EventArgs();
+
+/**
+ * Provides arguments for cancellable events.
+ */
+class CancelEventArgs extends EventArgs {
+    constructor() {
+        super(...arguments);
+        /**
+         * Gets or sets a value that indicates whether the event should be canceled.
+         */
+        this.cancel = false;
+    }
+}
+
 //import {DateTime} from "../core/index";
-//import {Event} from "../event/Event";
-//import {EventArgs} from "../eventArgs/EventArgs";
-//import {CancelEventArgs} from "../eventArgs/CancelEventArgs";
 //import {assert, asFunction, asBoolean, clamp, isPrimitive, tryCast, asArray, asInt} from "../core";
 //import {ObservableArray} from "./ObservableArray";
 //import {IEditableCollectionView} from "../collections/interface/IEditableCollectionView";
@@ -238,8 +258,6 @@ function asBoolean(value, nullOK = false) {
 //import {SortDescription} from "./SortDescription";
 //import {NotifyCollectionChangedAction} from "../enum/collections/NotifyCollectionChangedAction";
 //import {CollectionViewGroup} from "./CollectionViewGroup";
-//import {EventEmitter} from "@angular/core";
-//import {$$observable} from "rxjs/symbol/observable";
 /**
  * Class that implements the \@see:ICollectionView interface to expose data in
  * regular JavaScript arrays.
@@ -301,6 +319,11 @@ class CollectionView {
         this._canRemove = true;
         this._canChangePage = true;
         this._trackChanges = false;
+        /**
+         * Occurs after the current item changes.
+         */
+        this.currentChanged = new EventEmitter();
+        this.currentChanging = new EventEmitter();
         this._pgView = sourceCollection;
         // initialize the source collection
         // this.sourceCollection = sourceCollection ? sourceCollection : new ObservableArray();
@@ -409,6 +432,99 @@ class CollectionView {
     set trackChanges(value) {
         // this._trackChanges = asBoolean(value);
     }
+    /**
+     * Sets the specified item to be the current item in the view.
+     *
+     * @param {?} item Item that will become current.
+     * @return {?}
+     */
+    moveCurrentTo(item) {
+        return this.moveCurrentToPosition(this._pgView.indexOf(item));
+    }
+    /**
+     * Sets the first item in the view as the current item.
+     * @return {?}
+     */
+    moveCurrentToFirst() {
+        return this.moveCurrentToPosition(0);
+    }
+    /**
+     * Sets the last item in the view as the current item.
+     * @return {?}
+     */
+    moveCurrentToLast() {
+        return this.moveCurrentToPosition(this._pgView.length - 1);
+    }
+    /**
+     * Sets the item after the current item in the view as the current item.
+     * @return {?}
+     */
+    moveCurrentToNext() {
+        return this.moveCurrentToPosition(this._idx + 1);
+    }
+    /**
+     * @param {?} index
+     * @return {?}
+     */
+    moveCurrentToPosition(index) {
+        if (index >= -1 && index < this._pgView.length) {
+            const /** @type {?} */ e = new CancelEventArgs();
+            if (this._idx != index && this.onCurrentChanging(e)) {
+                // when moving away from current edit/new item, commit
+                if (this._edtItem && this._pgView[index] != this._edtItem) {
+                    // this.commitEdit();
+                }
+                if (this._newItem && this._pgView[index] != this._newItem) {
+                    // this.commitNew();
+                }
+                // update currency
+                this._idx = index;
+                this.onCurrentChanged();
+            }
+        }
+        return this._idx == index;
+    }
+    /**
+     * Raises the \@see:currentChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    onCurrentChanged(e = EventArgs.empty) {
+        this.currentChanged.emit(e);
+    }
+    /**
+     * Raises the \@see:currentChanging event.
+     *
+     * @param {?} e \@see:CancelEventArgs that contains the event data.
+     * @return {?}
+     */
+    onCurrentChanging(e) {
+        this.currentChanging.emit(e);
+        return !e.cancel;
+    }
+    /**
+     * Gets or sets the current item in the view.
+     * @return {?}
+     */
+    get currentItem() {
+        return this._pgView && this._idx > -1 && this._idx < this._pgView.length
+            ? this._pgView[this._idx]
+            : null;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set currentItem(value) {
+        this.moveCurrentTo(value);
+    }
+    /**
+     * Gets the ordinal position of the current item in the view.
+     * @return {?}
+     */
+    get currentPosition() {
+        return this._idx;
+    }
 }
 
 /**
@@ -455,6 +571,15 @@ function asCollectionView(value, nullOK = true) {
  * @return {?} The value passed in if the cast was successful, null otherwise.
  */
 
+/**
+ * Checks whether an \@see:ICollectionView is defined and not empty.
+ *
+ * @param {?} value \@see:ICollectionView to check.
+ * @return {?}
+ */
+function hasItems(value) {
+    return value && value.items && value.items.length;
+}
 /**
  * Sets the start and end positions of a selection in a text field.
  *
@@ -576,6 +701,13 @@ function tryCast$1(value, type) {
     // regular type test
     return value instanceof type ? value : null;
 }
+/**
+ * Checks whether an \@see:ICollectionView is defined and not empty.
+ *
+ * @param {?} value \@see:ICollectionView to check.
+ * @return {?}
+ */
+
 /**
  * Sets the start and end positions of a selection in a text field.
  *
@@ -2068,16 +2200,6 @@ class EventHandler {
 }
 
 /**
- * Base class for event arguments.
- */
-class EventArgs {
-}
-/**
- * Provides a value to use with events that do not have event data.
- */
-EventArgs.empty = new EventArgs();
-
-/**
  * Represents an event.
  *
  * Wijmo events are similar to .NET events. Any class may define events by
@@ -2467,19 +2589,6 @@ class Control {
 Control._DATA_KEY = 'wj-Control';
 Control._REFRESH_INTERVAL = 10;
 
-/**
- * Provides arguments for cancellable events.
- */
-class CancelEventArgs extends EventArgs {
-    constructor() {
-        super(...arguments);
-        /**
-         * Gets or sets a value that indicates whether the event should be canceled.
-         */
-        this.cancel = false;
-    }
-}
-
 //import {Color} from '../../core';
 //import {showPopup, hidePopup} from '../../core/popup'
 //import {Key} from "../../enum/Key";
@@ -2543,7 +2652,7 @@ class DropDown extends Control {
         // disable autocomplete (important for mobile browsers including Chrome/Android)
         this._tbx.autocomplete = 'off';
         // create drop-down element, update button display
-        //this._createDropDown();
+        this._createDropDown();
         this._updateBtn();
         // update focus state when the drop-down loses focus
         this.addEventListener(this._dropDown, 'blur', () => {
@@ -2571,6 +2680,12 @@ class DropDown extends Control {
             e.stopPropagation();
         });
         console.log("drop_down_constructor_finish");
+    }
+    /**
+     * @return {?}
+     */
+    _createDropDown() {
+        // override in derived classes
     }
     /**
      * Gets the drop down element shown when the \@see:isDroppedDown
@@ -2819,10 +2934,11 @@ DropDown.controlTemplate = '<div style="position:relative" class="wj-template">'
 
 //import {Color} from '../../core';
 //import {FormatItemEventArgs} from './../FormatItemEventArgs';
-//import {isObject} from '../../core';
-//import {asArray} from '../../core';
-//import {EventArgs} from "../../eventArgs/EventArgs";
+//import {asFunction} from '../../core';
+//import {hasItems} from '../../core';
 //import {escapeHtml} from '../../core';
+//import {Key} from "../../enum/Key";
+//import {tryCast} from '../../core';
 /**
  * The \@see:ListBox control displays a list of items which may contain
  * plain text or HTML, and allows users to select items with the mouse or
@@ -2855,6 +2971,14 @@ class ListBox extends Control {
         super(element);
         this._html = false;
         this._search = '';
+        /**
+         * Occurs when the list of items changes.
+         */
+        this.itemsChanged = new Event$1();
+        /**
+         * Occurs when the value of the \@see:selectedIndex property changes.
+         */
+        this.selectedIndexChanged = new Event$1();
         // instantiate and apply template
         this.applyTemplate('wj-control wj-listbox wj-content', null, null);
         // initializing from <select> tag
@@ -2882,6 +3006,32 @@ class ListBox extends Control {
         //this.initialize(options);
     }
     /**
+     * @return {?}
+     */
+    get isContentHtml() {
+        return this._html;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set isContentHtml(value) {
+        if (value != this._html) {
+            this._html = asBoolean(value);
+            this._populateList();
+        }
+    }
+    /**
+     * @param {?} index
+     * @return {?}
+     */
+    getDisplayText(index) {
+        const /** @type {?} */ children = this.hostElement.children, /** @type {?} */ item = index > -1 && index < children.length
+            ? (children[index])
+            : null;
+        return item != null ? item.textContent : '';
+    }
+    /**
      * @param {?} e
      * @return {?}
      */
@@ -2892,7 +3042,7 @@ class ListBox extends Control {
         for (let /** @type {?} */ index = 0; index < children.length; index++) {
             if (contains(children[index], e.target)) {
                 this.selectedIndex = index;
-                console.log("list_box_selected_index_set");
+                console.log("list_box_selected_index_set:" + this.selectedIndex);
                 break;
             }
         }
@@ -2915,9 +3065,15 @@ class ListBox extends Control {
     /**
      * @return {?}
      */
+    get collectionView() {
+        return this._cv;
+    }
+    /**
+     * @return {?}
+     */
     get selectedIndex() {
-        //return this._cv ? this._cv.currentPosition : -1;
-        return 1;
+        return this._cv ? this._cv.currentPosition : -1;
+        //return 1;
     }
     /**
      * @param {?} value
@@ -2925,7 +3081,7 @@ class ListBox extends Control {
      */
     set selectedIndex(value) {
         if (this._cv) {
-            //this._cv.moveCurrentToPosition(asNumber(value));
+            this._cv.moveCurrentToPosition(asNumber(value));
         }
     }
     /**
@@ -2944,10 +3100,46 @@ class ListBox extends Control {
             // unbind current collection view
             this._items = value;
             this._cv = asCollectionView(value);
+            if (this._cv != null) {
+                this._cv.currentChanged.subscribe(this._cvCurrentChanged.bind(this));
+                //this._cv.collectionChanged.addHandler(this._cvCollectionChanged, this);
+            }
             // update the list
             this._populateList();
             //	this.onItemsChanged();
             //	this.onSelectedIndexChanged();
+        }
+    }
+    /**
+     * @param {?} sender
+     * @param {?} e
+     * @return {?}
+     */
+    _cvCurrentChanged(sender, e) {
+        this.showSelection();
+        this.onSelectedIndexChanged();
+    }
+    /**
+     * Raises the \@see:itemsChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    onItemsChanged(e) {
+        this.itemsChanged.raise(this, e);
+    }
+    /**
+     * @return {?}
+     */
+    get selectedItem() {
+        return this._cv ? this._cv.currentItem : null;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedItem(value) {
+        if (this._cv) {
+            this._cv.moveCurrentTo(value);
         }
     }
     /**
@@ -3002,10 +3194,18 @@ class ListBox extends Control {
             //	this.focus();
             //}
             // scroll selection into view
-            //this.showSelection();
+            this.showSelection();
             // fire event so user can hook up to items
             //this.onLoadedItems();
         }
+    }
+    /**
+     * Raises the \@see:selectedIndexChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    onSelectedIndexChanged(e) {
+        this.selectedIndexChanged.raise(this, e);
     }
     /**
      * Highlights the selected item and scrolls it into view.
@@ -3018,7 +3218,7 @@ class ListBox extends Control {
         // highlight
         for (let /** @type {?} */ i = 0; i < children.length; i++) {
             e = (children[i]);
-            //toggleClass(e, 'wj-state-selected', i == index);
+            toggleClass(e, 'wj-state-selected', i == index);
         }
         // scroll into view
         if (index > -1 && index < children.length) {
@@ -3041,9 +3241,54 @@ class ListBox extends Control {
         }
         console.log("show selection _finished");
     }
+    /**
+     * @return {?}
+     */
+    get selectedValue() {
+        let /** @type {?} */ item = this.selectedItem;
+        if (item && this.selectedValuePath) {
+            item = item[this.selectedValuePath];
+        }
+        return item;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedValue(value) {
+        let /** @type {?} */ path = this.selectedValuePath, /** @type {?} */ index = -1;
+        if (this._cv) {
+            for (let /** @type {?} */ i = 0; i < this._cv.items.length; i++) {
+                const /** @type {?} */ item = this._cv.items[i];
+                if ((path && item[path] == value) || (!path && item == value)) {
+                    index = i;
+                    break;
+                }
+            }
+            this.selectedIndex = index;
+        }
+    }
+    /**
+     * Gets or sets the name of the property used to get the \@see:selectedValue
+     * from the \@see:selectedItem.
+     * @return {?}
+     */
+    get selectedValuePath() {
+        return this._pathValue;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedValuePath(value) {
+        this._pathValue = asString(value);
+    }
 }
 
 //import {Color} from '../../core';
+//import {CancelEventArgs} from "../../eventArgs/CancelEventArgs";
+//import {Key} from "../../enum/Key";
+//import {asNumber} from   '../../core';
 /**
  * The \@see:ComboBox control allows users to pick strings from lists.
  *
@@ -3083,9 +3328,10 @@ class ComboBox extends DropDown {
         this._composing = false;
         this._deleting = false;
         this._settingText = false;
+        this.selectedIndexChanged = new Event$1();
         console.log("combo_constructor_start");
-        this._lbx = new ListBox(this._dropDown);
         // handle IME
+        /*
         this.addEventListener(this._tbx, 'compositionstart', () => {
             this._composing = true;
         });
@@ -3093,6 +3339,7 @@ class ComboBox extends DropDown {
             this._composing = false;
             this._setText(this.text, true);
         });
+        */
         // initialize control options
         this.initialize(options);
         console.log("combo_constructor_finish");
@@ -3117,6 +3364,7 @@ class ComboBox extends DropDown {
         text = text.toString();
         super._setText(text, fullMatch);
         console.log("combo_box_set_text_finish");
+        this._settingText = false;
     }
     /**
      * Gets or sets the array or \@see:ICollectionView object that contains the items to select from.
@@ -3138,6 +3386,142 @@ class ComboBox extends DropDown {
      */
     _createDropDown() {
         console.log("create drop down");
+        this._lbx = new ListBox(this._dropDown);
+        this._lbx.selectedIndexChanged.addHandler(() => {
+            this._updateBtn();
+            this.selectedIndex = this._lbx.selectedIndex;
+            this.onSelectedIndexChanged();
+        });
+        // update button display when item list changes
+        this._lbx.itemsChanged.addHandler(() => {
+            this._updateBtn();
+        });
+        // close the drop-down when the user clicks to select an item
+        this.addEventListener(this._dropDown, 'click', (e) => {
+            if (e.target != this._dropDown) {
+                this.isDroppedDown = false;
+            }
+        });
+    }
+    /**
+     * @return {?}
+     */
+    get headerPath() {
+        return this._hdrPath;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set headerPath(value) {
+        this._hdrPath = asString(value);
+        const /** @type {?} */ text = this.getDisplayText();
+        if (this.text != text) {
+            this._setText(text, true);
+        }
+    }
+    /**
+     * Raises the \@see:selectedIndexChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    onSelectedIndexChanged(e) {
+        this._updateBtn();
+        this.selectedIndexChanged.raise(this, e);
+    }
+    /**
+     * Gets or sets the index of the currently selected item in the drop-down list.
+     * @return {?}
+     */
+    get selectedIndex() {
+        return this._lbx.selectedIndex;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedIndex(value) {
+        if (value != this.selectedIndex) {
+            this._lbx.selectedIndex = value;
+        }
+        const /** @type {?} */ text = this.getDisplayText(value);
+        if (this.text != text) {
+            this._setText(text, true);
+        }
+    }
+    /**
+     * @return {?}
+     */
+    get collectionView() {
+        return this._lbx.collectionView;
+    }
+    /**
+     * @param {?=} index
+     * @return {?}
+     */
+    getDisplayText(index = this.selectedIndex) {
+        // get display text directly from the headerPath if that was specified
+        if (this.headerPath && index > -1 && hasItems(this.collectionView)) {
+            const /** @type {?} */ item = this.collectionView.items[index][this.headerPath];
+            let /** @type {?} */ text = item != null ? item.toString() : '';
+            if (this.isContentHtml) {
+                if (!this._cvt) {
+                    this._cvt = document.createElement('div');
+                }
+                this._cvt.innerHTML = text;
+                text = this._cvt.textContent;
+            }
+            return text;
+        }
+        // headerPath not specified, get text straight from the ListBox
+        return this._lbx.getDisplayText(index);
+    }
+    /**
+     * @return {?}
+     */
+    get isContentHtml() {
+        return this._lbx.isContentHtml;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set isContentHtml(value) {
+        if (value != this.isContentHtml) {
+            this._lbx.isContentHtml = asBoolean(value);
+            let /** @type {?} */ text = this.getDisplayText();
+            if (this.text != text) {
+                this._setText(text, true);
+            }
+        }
+    }
+    /**
+     * Gets or sets the item that is currently selected in the drop-down list.
+     * @return {?}
+     */
+    get selectedItem() {
+        return this._lbx.selectedItem;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedItem(value) {
+        this._lbx.selectedItem = value;
+    }
+    /**
+     * Gets or sets the value of the \@see:selectedItem, obtained using the \@see:selectedValuePath.
+     * @return {?}
+     */
+    get selectedValue() {
+        return this._lbx.selectedValue;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set selectedValue(value) {
+        this._lbx.selectedValue = value;
     }
 }
 

@@ -1,5 +1,8 @@
 import { DropDown } from './../DropDown/DropDown';
 import { ListBox } from './../ListBox/ListBox';
+import { CollectionView } from "../../collections-light/CollectionView";
+import { EventArgs } from "../../eventArgs/EventArgs";
+import { Event } from "../../event/Event";
 /**
  * The @see:ComboBox control allows users to pick strings from lists.
  *
@@ -45,4 +48,25 @@ export declare class ComboBox extends DropDown {
      */
     itemsSource: any;
     _createDropDown(): void;
+    headerPath: string;
+    selectedIndexChanged: Event;
+    /**
+     * Raises the @see:selectedIndexChanged event.
+     */
+    onSelectedIndexChanged(e?: EventArgs): void;
+    /**
+     * Gets or sets the index of the currently selected item in the drop-down list.
+     */
+    selectedIndex: number;
+    readonly collectionView: CollectionView;
+    getDisplayText(index?: number): string;
+    isContentHtml: boolean;
+    /**
+     * Gets or sets the item that is currently selected in the drop-down list.
+     */
+    selectedItem: any;
+    /**
+     * Gets or sets the value of the @see:selectedItem, obtained using the @see:selectedValuePath.
+     */
+    selectedValue: any;
 }

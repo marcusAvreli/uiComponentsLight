@@ -3,6 +3,7 @@ import {Rectangle} from "./ui/Rectangle";
 import {isFunction, isString, asType, contains, asNumber, isBoolean, isNumber} from "../util/util";
 import {Aggregate} from "../../../enum/Aggregate";
 //import {ICollectionView} from "../../../collections/interface/ICollectionView";
+import {CollectionView} from "../../../collections-light/CollectionView";
 
 
 
@@ -48,11 +49,11 @@ export function tryCast(value: any, type: any): any {
  *
  * @param value @see:ICollectionView to check.
  */
- /*
-export function hasItems(value: ICollectionView) {
+ 
+export function hasItems(value: CollectionView) {
     return value && value.items && value.items.length;
 }
-*/
+
 
 
 

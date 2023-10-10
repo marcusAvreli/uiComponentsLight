@@ -4,20 +4,20 @@ import {Control} from '../Control';
 //import {FormatItemEventArgs} from './../FormatItemEventArgs';
 import {asCollectionView} from '../../core';
 //import {asFunction} from '../../core';
-//import {asString} from '../../core';
+import {asString} from '../../core';
 //import {hasItems} from '../../core';
-//import {asNumber} from '../../core';
+import {asNumber} from '../../core';
 import {toggleClass} from '../../core';
 import {contains} from '../../core';
 //import {isObject} from '../../core';
 //import {asArray} from '../../core';
-//import {EventArgs} from "../../eventArgs/EventArgs";
+import {EventArgs} from "../../eventArgs/EventArgs";
 //import {escapeHtml} from '../../core';
 import {hasClass} from '../../core';
 //import {Key} from "../../enum/Key";
 //import {tryCast} from '../../core';
-//import {Event} from "../../event/Event";
-//import {asBoolean} from '../../core';
+import {Event} from "../../event/Event";
+import {asBoolean} from '../../core';
 //import { Subscription } from 'rxjs';
 //import {ICollectionView} from "../../collections-light/interface/ICollectionView";
 import {CollectionView} from "../../collections-light/CollectionView";
@@ -101,7 +101,23 @@ export class ListBox extends Control {
 		// initialize control options
 		//this.initialize(options);
 	}
-
+get isContentHtml(): boolean {
+		return this._html;
+	}
+	set isContentHtml(value: boolean) {
+		if (value != this._html) {
+			this._html = asBoolean(value);
+			this._populateList();
+		}
+	}
+	
+	getDisplayText(index: number): string {
+		const children = this.hostElement.children,
+              item     = index > -1 && index < children.length
+                  ? <HTMLElement>children[index]
+                  : null;
+		return item != null ? item.textContent : '';
+	}
 	//--------------------------------------------------------------------------
 	//#region ** overrides
 private _click(e: MouseEvent) {
@@ -111,7 +127,7 @@ private _click(e: MouseEvent) {
 		for (let index = 0; index < children.length; index++) {
 			if (contains(children[index], e.target)) {
 				this.selectedIndex = index;
-				console.log("list_box_selected_index_set");
+				console.log("list_box_selected_index_set:"+this.selectedIndex);
 				break;
 			}
 		}
@@ -131,14 +147,18 @@ private _click(e: MouseEvent) {
 		//super.refresh();
 		//this._populateList();
 	}
+	
+	get collectionView(): CollectionView {
+		return this._cv;
+	}
 	//#endregion
 get selectedIndex(): number {
-		//return this._cv ? this._cv.currentPosition : -1;
-		return 1;
+		return this._cv ? this._cv.currentPosition : -1;
+		//return 1;
 	}
 	set selectedIndex(value: number) {
 		if (this._cv) {
-			//this._cv.moveCurrentToPosition(asNumber(value));
+			this._cv.moveCurrentToPosition(asNumber(value));
 		}
 	}
 	//--------------------------------------------------------------------------
@@ -156,10 +176,39 @@ get selectedIndex(): number {
 			// unbind current collection view
 			this._items = value;
 			this._cv = asCollectionView(value);
+			
+			if (this._cv != null) {
+				this._cv.currentChanged.subscribe(this._cvCurrentChanged.bind(this));
+				//this._cv.collectionChanged.addHandler(this._cvCollectionChanged, this);
+			}
 			// update the list
 			this._populateList();
 		//	this.onItemsChanged();
 		//	this.onSelectedIndexChanged();
+		}
+	}
+	private _cvCurrentChanged(sender: any, e: EventArgs) {
+		this.showSelection();
+		this.onSelectedIndexChanged();
+	}
+
+	/**
+	 * Occurs when the list of items changes.
+	 */
+	itemsChanged = new Event();
+	/**
+	 * Raises the @see:itemsChanged event.
+	 */
+	onItemsChanged(e?: EventArgs) {
+		this.itemsChanged.raise(this, e);
+	}
+	
+	get selectedItem(): any {
+		return this._cv ? this._cv.currentItem: null;
+	}
+	set selectedItem(value: any) {
+		if (this._cv) {
+			this._cv.moveCurrentTo(value);
 		}
 	}
 	// populate the list from the current itemsSource
@@ -230,6 +279,16 @@ get selectedIndex(): number {
 			//this.onLoadedItems();
 		}
 	}
+		/**
+	 * Occurs when the value of the @see:selectedIndex property changes.
+	 */
+	selectedIndexChanged = new Event();
+	/**
+	 * Raises the @see:selectedIndexChanged event.
+	 */
+	onSelectedIndexChanged(e?: EventArgs) {
+		this.selectedIndexChanged.raise(this, e);
+	}
 	/**
 	 * Highlights the selected item and scrolls it into view.
 	 */
@@ -266,5 +325,39 @@ get selectedIndex(): number {
 			}
 		}
 		console.log("show selection _finished");
+	}
+	
+	
+	get selectedValue(): any {
+		let item = this.selectedItem;
+		if (item && this.selectedValuePath) {
+			item = item[this.selectedValuePath];
+		}
+		return item;
+	}
+	set selectedValue(value: any) {
+		let path  = this.selectedValuePath,
+            index = -1;
+		if (this._cv) {
+			for (let i = 0; i < this._cv.items.length; i++) {
+				const item = this._cv.items[i];
+				if ((path && item[path] == value) || (!path && item == value)) {
+					index = i;
+					break;
+				}
+			}
+			this.selectedIndex = index;
+		}
+	}
+	
+	/**
+	 * Gets or sets the name of the property used to get the @see:selectedValue
+	 * from the @see:selectedItem.
+	 */
+	get selectedValuePath(): string {
+		return this._pathValue;
+	}
+	set selectedValuePath(value: string) {
+		this._pathValue = asString(value);
 	}
 }

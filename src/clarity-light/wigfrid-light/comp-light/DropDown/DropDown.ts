@@ -93,7 +93,7 @@ export class DropDown extends Control {
         this._tbx.autocomplete = 'off';
 
         // create drop-down element, update button display
-        //this._createDropDown();
+        this._createDropDown();
         this._updateBtn();
 
         // update focus state when the drop-down loses focus
@@ -133,6 +133,12 @@ export class DropDown extends Control {
             }
         );
        console.log("drop_down_constructor_finish");
+    }
+	
+	
+	 // create the drop-down element
+    _createDropDown() {
+        // override in derived classes
     }
 	 /**
      * Gets the drop down element shown when the @see:isDroppedDown
