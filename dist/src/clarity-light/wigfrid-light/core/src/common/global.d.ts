@@ -1,6 +1,5 @@
 import { Rectangle } from "./ui/Rectangle";
 import { Aggregate } from "../../../enum/Aggregate";
-import { ICollectionView } from "../../../collections/interface/ICollectionView";
 /**
  * Allows callers to verify whether an object implements an interface.
  */
@@ -25,7 +24,6 @@ export declare function tryCast(value: any, type: any): any;
  *
  * @param value @see:ICollectionView to check.
  */
-export declare function hasItems(value: ICollectionView): number;
 /**
  * Sets the start and end positions of a selection in a text field.
  *

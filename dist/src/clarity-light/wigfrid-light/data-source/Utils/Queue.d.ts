@@ -7,6 +7,6 @@ export declare class Queue {
     private _subject;
     private _queueStream;
     constructor();
-    add(observable: Observable): void;
+    add(observable: Observable<any>): void;
     busy(): any;
 }

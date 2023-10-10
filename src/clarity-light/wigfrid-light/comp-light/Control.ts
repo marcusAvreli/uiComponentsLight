@@ -55,11 +55,47 @@ export class Control {
      * @param invalidateOnResize Whether the control should be invalidated when it is resized.
      */
     constructor(element: any, options = null, invalidateOnResize = false) {
-
-       
+	console.log("control_constructor");
+        // get the host element
+        let host = getElement(element);
+		  this._e = host;
+        host[Control._DATA_KEY] = this;
+		 const hd = this._handleDisabled.bind(this);
+ this.addEventListener(host, 'click', hd, true);
     }
 
-   
+      // suppress mouse and keyboard events if the control is disabled
+    private _handleDisabled(e: any) {
+        if (this.disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        }
+    }
+	 /**
+     * Gets or sets whether the control is disabled.
+     *
+     * Disabled controls cannot get mouse or keyboard events.
+     */
+    get disabled(): boolean {
+        return this._e && this._e.getAttribute('disabled') != null;
+    }
+    set disabled(value: boolean) {
+        value = asBoolean(value, true);
+        if (value != this.disabled) {
+            enable(this._e, !value);
+        }
+    }
+	
+	 addEventListener(target: EventTarget, type: string, fn: any, capture = false) {
+            if (target) {
+                target.addEventListener(type, fn, capture);
+                if (this._listeners == null) {
+                    this._listeners = [];
+                }
+                this._listeners.push({ target: target, type: type, fn: fn, capture: capture });
+            }
+        }
     /**
      * Applies the template to a new instance of a control, and returns the root element.
      *
@@ -86,6 +122,7 @@ export class Control {
      * determines how the control submits data when used in forms.
      */
     applyTemplate(classNames: string, template: string, parts: Object, namePart?: string): HTMLElement {
+		console.log("apply_template_start");
         const host = this._e;
 
         // apply standard classes to host element
@@ -147,7 +184,28 @@ export class Control {
         }
 
         // return template
+		console.log("apply_template_finish");
         return tpl;
     }
-   
+    /**
+     * Gets the HTML template used to create instances of the control.
+     *
+     * This method traverses up the class hierarchy to find the nearest ancestor that
+     * specifies a control template. For example, if you specify a prototype for the
+     * @see:ComboBox control, it will override the template defined by the @see:DropDown
+     * base class.
+     */
+    getTemplate(): string {
+        for (let p = Object.getPrototypeOf(this); p; p = Object.getPrototypeOf(p)) {
+
+            const tpl = "sssss";
+
+        }
+
+        return null;
+    }
+	  static getControl(element: any): Control {
+        const e = getElement(element);
+        return e ? asType(e[Control._DATA_KEY], Control, true) : null;
+    }
 }

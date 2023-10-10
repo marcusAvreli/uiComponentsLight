@@ -55,5 +55,5 @@ export function animate(apply: Function, duration = 400, step = 35): number {
                                   }
                               }, step
     );
-    return timer;
+    return 1;
 }

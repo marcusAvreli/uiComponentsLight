@@ -1,7 +1,4 @@
-import { Control } from '../../core/Control';
-import { CancelEventArgs } from "../../eventArgs/CancelEventArgs";
-import { EventArgs } from "../../eventArgs/EventArgs";
-import { Event } from "../../event/Event";
+import { Control } from '../Control';
 /**
  * DropDown control (abstract).
  *
@@ -30,80 +27,4 @@ export declare class DropDown extends Control {
      * @param options The JavaScript object containing initialization data for the control.
      */
     constructor(element: any, options?: any);
-    /**
-     * Gets or sets the text shown on the control.
-     */
-    text: string;
-    /**
-     * Gets the HTML input element hosted by the control.
-     *
-     * Use this property in situations where you want to customize the
-     * attributes of the input element.
-     */
-    readonly inputElement: HTMLInputElement;
-    /**
-     * Gets or sets the string shown as a hint when the control is empty.
-     */
-    placeholder: string;
-    /**
-     * Gets or sets a value that indicates whether the drop down is currently visible.
-     */
-    isDroppedDown: boolean;
-    /**
-     * Gets the drop down element shown when the @see:isDroppedDown
-     * property is set to true.
-     */
-    readonly dropDown: HTMLElement;
-    /**
-     * Gets or sets a value that indicates whether the control should display a drop-down button.
-     */
-    showDropDownButton: boolean;
-    /**
-     * Gets or sets a value that indicates whether the control should automatically expand the
-     * selection to whole words/numbers when the control is clicked.
-     */
-    autoExpandSelection: boolean;
-    /**
-     * Sets the focus to the control and selects all its content.
-     */
-    selectAll(): void;
-    /**
-     * Occurs when the value of the @see:text property changes.
-     */
-    textChanged: Event;
-    /**
-     * Raises the @see:textChanged event.
-     */
-    onTextChanged(e?: EventArgs): void;
-    /**
-     * Occurs before the drop down is shown or hidden.
-     */
-    isDroppedDownChanging: Event;
-    /**
-     * Raises the @see:isDroppedDownChanging event.
-     */
-    onIsDroppedDownChanging(e: CancelEventArgs): boolean;
-    /**
-     * Occurs after the drop down is shown or hidden.
-     */
-    isDroppedDownChanged: Event;
-    /**
-     * Raises the @see:isDroppedDownChanged event.
-     */
-    onIsDroppedDownChanged(e?: EventArgs): void;
-    onGotFocus(e?: EventArgs): void;
-    onLostFocus(e?: EventArgs): void;
-    containsFocus(): boolean;
-    dispose(): void;
-    refresh(fullUpdate?: boolean): void;
-    _handleResize(): void;
-    _expandSelection(): void;
-    _getCharType(text: string, pos: number): 1 | -1 | 0;
-    _keydown(e: KeyboardEvent): void;
-    _btnclick(e: MouseEvent): void;
-    _setText(text: string, fullMatch: boolean): void;
-    _updateBtn(): void;
-    _createDropDown(): void;
-    _commitText(): void;
-    _updateDropDown(): void;
 }

@@ -1,4 +1,4 @@
-import { ICollectionView } from "../../../../collections/interface/ICollectionView";
+import { CollectionView } from "../../../../collections-light/CollectionView";
 /**
  * Asserts that a value is an @see:ICollectionView or an Array.
  *
@@ -7,4 +7,4 @@ import { ICollectionView } from "../../../../collections/interface/ICollectionVi
  * @return The @see:ICollectionView that was passed in or a @see:CollectionView
  * created from the array that was passed in.
  */
-export declare function asCollectionView(value: any, nullOK?: boolean): ICollectionView;
+export declare function asCollectionView(value: any, nullOK?: boolean): CollectionView;

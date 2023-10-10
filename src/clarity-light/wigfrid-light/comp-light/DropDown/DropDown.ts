@@ -60,12 +60,26 @@ export class DropDown extends Control {
      * @param options The JavaScript object containing initialization data for the control.
      */
     constructor(element: any, options?) {
-        super(element, null, true);
-
+        super(element,  true);
+		console.log("drop_down_constructor_start");
         // instantiate and apply template
-        //const tpl = this.getTemplate();
+        const tpl =  '<div style="position:relative" class="wj-template">' +
+        '<div class="wj-input">' +
+        '<div class="wj-input-group wj-input-btn-visible">' +
+        '<input wj-part="input" type="text" class="wj-form-control" />' +
+        '<span wj-part="btn" class="wj-input-group-btn" tabindex="-1">' +
+        '<button class="wj-btn wj-btn-default" type="button" tabindex="-1">' +
+        '<span class="wj-glyph-down"></span>' +
+        '</button>' +
+        '</span>' +
+        '</div>' +
+        '</div>' +
+        '<div wj-part="dropdown" class="wj-content wj-dropdown-panel" ' +
+        'style="display:none;position:absolute;z-index:100;width:auto">' +
+        '</div>' +
+        '</div>';
         this.applyTemplate(
-            'wj-control wj-dropdown wj-content', null, {
+            'wj-control wj-dropdown wj-content', tpl, {
                 _tbx     : 'input',
                 _btn     : 'btn',
                 _dropDown: 'dropdown'
@@ -85,7 +99,7 @@ export class DropDown extends Control {
         // update focus state when the drop-down loses focus
         
 
-       
+       console.log("drop_down_constructor_finish");
     }
 
    

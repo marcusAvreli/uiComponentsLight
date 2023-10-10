@@ -40,6 +40,7 @@ export { isObject } from "./lang/is-object";
 export { isPrimitive } from "./lang/is-primitive";
 export { isString } from "./lang/is-string";
 export { isUndefined } from "./lang/is-undefined";
+export { isPresent } from "./lang/is-present";
 export { clamp } from "./math/clamp";
 export { toFixed } from "./math/to-fixed";
 export { escapeHtml } from "./string-manipulation/escape-html";
