@@ -103,6 +103,7 @@ export declare class CollectionView {
      * @param interfaceName Name of the interface to look for.
      */
     implementsInterface(interfaceName: string): boolean;
+    readonly items: any[];
     /**
      * Gets or sets a value that determines whether the control should
      * track changes to the data.

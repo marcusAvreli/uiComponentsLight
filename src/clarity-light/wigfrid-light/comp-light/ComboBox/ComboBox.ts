@@ -63,13 +63,40 @@ export class ComboBox extends DropDown {
 	 */
 	constructor(element: any, options?) {
 		super(element);
-
-	
+console.log("combo_constructor_start");
+		this._lbx = new ListBox(this._dropDown);
+		// handle IME
+		this.addEventListener(this._tbx, 'compositionstart', () => {
+			this._composing = true;
+		});
+		this.addEventListener(this._tbx, 'compositionend', () => {
+			this._composing = false;
+			this._setText(this.text, true);
+		});
+			// initialize control options
+		this.initialize(options);
+		console.log("combo_constructor_finish");
 	}
 
 	//--------------------------------------------------------------------------
 	//#region ** object model
 
+_setText(text: string, fullMatch: boolean) {
+			console.log("combo_box_set_text_start");
+		// not while composing IME text...
+		if (this._composing) return;
+
+		// prevent reentrant calls while moving CollectionView cursor
+		if (this._settingText) return;
+		this._settingText = true;
+
+		// make sure we have a string
+		if (text == null) text = '';
+		text = text.toString();
+		super._setText(text, fullMatch);
+		console.log("combo_box_set_text_finish");
+
+}
 	/**
 	 * Gets or sets the array or @see:ICollectionView object that contains the items to select from.
 	 */
@@ -78,8 +105,11 @@ export class ComboBox extends DropDown {
 	}
 	set itemsSource(value: any) {
 		this._lbx.itemsSource = value;
-		//this._updateBtn();
+		this._updateBtn();
 	}
-	
+	// create the drop-down element
+	_createDropDown() {
+		console.log("create drop down");
+	}
 
 }

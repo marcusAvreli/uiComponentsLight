@@ -65,6 +65,9 @@ function isDate(value) {
  * @param {?} value
  * @return {?}
  */
+function isObject(value) {
+    return value != null && typeof value == 'object' && !isDate(value) && !isArray(value);
+}
 /**
  * @param {?} value
  * @return {?}
@@ -97,6 +100,23 @@ function assert(condition, msg) {
  * @param {?} src The source object.
  * @return {?}
  */
+function copy(dst, src) {
+    for (var /** @type {?} */ key in src) {
+        assert(key in dst, 'Unknown key "' + key + '".');
+        var /** @type {?} */ value = src[key];
+        if (!dst._copy || !dst._copy(key, value)) {
+            if (dst[key] instanceof Event && isFunction(value)) {
+                dst[key].addHandler(value); // add event handler
+            }
+            else if (isObject(value) && dst[key]) {
+                copy(dst[key], value); // copy sub-objects
+            }
+            else {
+                dst[key] = value; // assign values
+            }
+        }
+    }
+}
 /**
  * Class that represents a point (with x and y coordinates).
  */
@@ -119,6 +139,11 @@ function isNumber(value) {
  * @param {?=} nullOK Whether null values are acceptable.
  * @return {?} The function passed in.
  */
+function asFunction(value, nullOK) {
+    if (nullOK === void 0) { nullOK = true; }
+    assert((nullOK && value == null) || isFunction(value), 'Function expected.');
+    return value;
+}
 /**
  * Asserts that a value is a number.
  *
@@ -253,6 +278,158 @@ function asBoolean(value, nullOK) {
  * </pre>
  * @deprecated
  */
+var CollectionView = (function () {
+    /**
+     * Initializes a new instance of a \@see:CollectionView.
+     *
+     * \@see:CollectionView.
+     * @param {?=} sourceCollection Array that serves as a source for this
+     */
+    function CollectionView(sourceCollection) {
+        // check that sortDescriptions contains SortDescriptions
+        this._idx = -1;
+        // _filter: IPredicate;
+        // _srtDsc        = new ObservableArray();
+        // _grpDesc       = new ObservableArray();
+        this._newItem = null;
+        this._edtItem = null;
+        this._pgSz = 0;
+        this._pgIdx = 0;
+        this._updating = 0;
+        this._canFilter = true;
+        this._canGroup = true;
+        this._canSort = true;
+        this._canAddNew = true;
+        this._canCancelEdit = true;
+        this._canRemove = true;
+        this._canChangePage = true;
+        this._trackChanges = false;
+        this._pgView = sourceCollection;
+        // initialize the source collection
+        // this.sourceCollection = sourceCollection ? sourceCollection : new ObservableArray();
+    }
+    Object.defineProperty(CollectionView.prototype, "newItemCreator", {
+        /**
+         * Gets or sets a function that creates new items for the collection.
+         *
+         * If the creator function is not supplied, the \@see:CollectionView
+         * will try to create an uninitilized item of the appropriate type.
+         *
+         * If the creator function is supplied, it should be a function that
+         * takes no parameters and returns an initialized object of the proper
+         * type for the collection.
+         * @return {?}
+         */
+        get: function () {
+            return this._itemCreator;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CollectionView.prototype, "sortConverter", {
+        /**
+         * Gets or sets a function used to convert values when sorting.
+         *
+         * If provided, the function should take as parameters a
+         * \@see:SortDescription, a data item, and a value to convert,
+         * and should return the converted value.
+         *
+         * This property provides a way to customize sorting. For example,
+         * the \@see:FlexGrid control uses it to sort mapped columns by
+         * display value instead of by raw value.
+         *
+         * For example, the code below causes a \@see:CollectionView to
+         * sort the 'country' property, which contains country code integers,
+         * using the corresponding country names:
+         *
+         * <pre>var countries = 'US,Germany,UK,Japan,Italy,Greece'.split(',');
+         * collectionView.sortConverter = function (sd, item, value) {
+         *   if (sd.property == 'countryMapped') {
+         *     value = countries[value]; // convert country id into name
+         *   }
+         *   return value;
+         * }</pre>
+         * @return {?}
+         */
+        get: function () {
+            return this._srtCvt;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            if (value != this._srtCvt) {
+                // this._srtCvt = asFunction(value, true);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Returns true if the caller queries for a supported interface.
+     *
+     * @param {?} interfaceName Name of the interface to look for.
+     * @return {?}
+     */
+    CollectionView.prototype.implementsInterface = function (interfaceName) {
+        switch (interfaceName) {
+            case 'ICollectionView':
+            case 'IEditableCollectionView':
+            case 'IPagedCollectionView':
+            case 'INotifyCollectionChanged':
+                return true;
+        }
+        return false;
+    };
+    Object.defineProperty(CollectionView.prototype, "items", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return this._pgView;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CollectionView.prototype, "trackChanges", {
+        /**
+         * Gets or sets a value that determines whether the control should
+         * track changes to the data.
+         *
+         * If \@see:trackChanges is set to true, the \@see:CollectionView keeps
+         * track of changes to the data and exposes them through the
+         * \@see:itemsAdded, \@see:itemsRemoved, and \@see:itemsEdited collections.
+         *
+         * Tracking changes is useful in situations where you need to to update
+         * the server after the user has confirmed that the modifications are
+         * valid.
+         *
+         * After committing or cancelling changes, use the \@see:clearChanges method
+         * to clear the \@see:itemsAdded, \@see:itemsRemoved, and \@see:itemsEdited
+         * collections.
+         *
+         * The \@see:CollectionView only tracks changes made when the proper
+         * \@see:CollectionView methods are used (\@see:editItem/\@see:commitEdit,
+         * \@see:addNew/@see:commitNew, and \@see:remove).
+         * Changes made directly to the data are not tracked.
+         * @return {?}
+         */
+        get: function () {
+            return this._trackChanges;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            // this._trackChanges = asBoolean(value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return CollectionView;
+}());
 /**
  * Asserts that a value is an \@see:ICollectionView or an Array.
  *
@@ -261,6 +438,21 @@ function asBoolean(value, nullOK) {
  * @return {?} The \@see:ICollectionView that was passed in or a \@see:CollectionView
  * created from the array that was passed in.
  */
+function asCollectionView(value, nullOK) {
+    if (nullOK === void 0) { nullOK = true; }
+    if (value == null && nullOK) {
+        return null;
+    }
+    /*const cv = tryCast(value, 'ICollectionView');
+    if (cv != null) {
+        return cv;
+    }
+    if (!isArray(value)) {
+        assert(false, 'Array or ICollectionView expected.');
+    }
+    */
+    return new CollectionView(value);
+}
 //import { mapDataRespectingGrouping } from "./util";
 //import * as _ from "lodash";
 //import { CommonStore } from "./Store/CommonStore/CommonStore";
@@ -290,6 +482,17 @@ function asBoolean(value, nullOK) {
  * @param {?=} end Offset into the text field for the end of the selection.
  * @return {?}
  */
+function setSelectionRange(e, start, end) {
+    if (end === void 0) { end = start; }
+    e = asType(e, HTMLInputElement);
+    if (contains(document.body, e) && !e.disabled && e.style.display != 'none') {
+        try {
+            e.setSelectionRange(asNumber(start), asNumber(end));
+            e.focus(); // needed in Chrome (TFS 124102)
+        }
+        catch (x) { }
+    }
+}
 /**
  * Gets the bounding rectangle of an element in page coordinates.
  *
@@ -490,6 +693,13 @@ function addClass(e, className) {
  * @param {?} child Child element.
  * @return {?} True if the parent element contains the child element.
  */
+function contains(parent, child) {
+    for (var /** @type {?} */ e = (child); e; e = e.parentNode) {
+        if (e === parent)
+            return true;
+    }
+    return false;
+}
 /**
  * @param {?} e
  * @return {?}
@@ -1821,6 +2031,146 @@ Globalize._dateFomatParts = {};
  *   }
  * });</pre>
  */
+/*
+ * Represents an event handler (private class)
+ */
+var EventHandler = (function () {
+    /**
+     * @param {?} handler
+     * @param {?} self
+     */
+    function EventHandler(handler, self) {
+        this.handler = handler;
+        this.self = self;
+    }
+    return EventHandler;
+}());
+/**
+ * Base class for event arguments.
+ */
+var EventArgs = (function () {
+    function EventArgs() {
+    }
+    return EventArgs;
+}());
+/**
+ * Provides a value to use with events that do not have event data.
+ */
+EventArgs.empty = new EventArgs();
+/**
+ * Represents an event.
+ *
+ * Wijmo events are similar to .NET events. Any class may define events by
+ * declaring them as fields. Any class may subscribe to events using the
+ * event's \@see:addHandler method and unsubscribe using the \@see:removeHandler
+ * method.
+ *
+ * Wijmo event handlers take two parameters: <i>sender</i> and <i>args</i>.
+ * The first is the object that raised the event, and the second is an object
+ * that contains the event parameters.
+ *
+ * Classes that define events follow the .NET pattern where for every event
+ * there is an <i>on[EVENTNAME]</i> method that raises the event. This pattern
+ * allows derived classes to override the <i>on[EVENTNAME]</i> method and
+ * handle the event before and/or after the base class raises the event.
+ * Derived classes may even suppress the event by not calling the base class
+ * implementation.
+ *
+ * For example, the TypeScript code below overrides the <b>onValueChanged</b>
+ * event for a control to perform some processing before and after the
+ * <b>valueChanged</b> event fires:
+ * <pre>
+ *   // override base class
+ *   onValueChanged(e: EventArgs) {
+ *   // execute some code before the event fires
+ *   console.log('about to fire valueChanged');
+ *   // optionally, call base class to fire the event
+ *   super.onValueChanged(e);
+ *   // execute some code after the event fired
+ *   console.log('valueChanged event just fired');
+ * }
+ * </pre>
+ * @deprecated
+ */
+var Event$1 = (function () {
+    /**
+     * @deprecated
+     */
+    function Event$1() {
+        this._handlers = [];
+    }
+    /**
+     * Adds a handler to this event.
+     *
+     * @deprecated
+     * @param {?} handler Function invoked when the event is raised.
+     * @param {?=} self Object that defines the event handler
+     * (accessible as 'this' from the handler code).
+     * @return {?}
+     */
+    Event$1.prototype.addHandler = function (handler, self) {
+        asFunction(handler);
+        this._handlers.push(new EventHandler(handler, self));
+    };
+    /**
+     * Removes a handler from this event.
+     *
+     * @deprecated
+     * @param {?} handler Function invoked when the event is raised.
+     * @param {?=} self Object that defines the event handler (accessible as 'this' from the handler code).
+     * @return {?}
+     */
+    Event$1.prototype.removeHandler = function (handler, self) {
+        asFunction(handler);
+        for (var /** @type {?} */ i = 0; i < this._handlers.length; i++) {
+            var /** @type {?} */ l = this._handlers[i];
+            if (l.handler == handler || handler == null) {
+                if (l.self == self || self == null) {
+                    this._handlers.splice(i, 1);
+                    if (handler && self) {
+                        break;
+                    }
+                }
+            }
+        }
+    };
+    /**
+     * Removes all handlers associated with this event.
+     * @deprecated
+     * @return {?}
+     */
+    Event$1.prototype.removeAllHandlers = function () {
+        this._handlers.length = 0;
+    };
+    /**
+     * Raises this event, causing all associated handlers to be invoked.
+     *
+     * @deprecated use EventEmitter.emit() instead
+     * @param {?} sender Source object.
+     * @param {?=} args Event parameters.
+     * @return {?}
+     */
+    Event$1.prototype.raise = function (sender, args) {
+        if (args === void 0) { args = EventArgs.empty; }
+        for (var /** @type {?} */ i = 0; i < this._handlers.length; i++) {
+            var /** @type {?} */ l = this._handlers[i];
+            l.handler.call(l.self, sender, args);
+        }
+    };
+    Object.defineProperty(Event$1.prototype, "hasHandlers", {
+        /**
+         * Gets a value that indicates whether this event has any handlers.
+         * @deprecated
+         * @return {?}
+         */
+        get: function () {
+            return this._handlers.length > 0;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Event$1;
+}());
 /**
  * Base class for all Wijmo controls.
  *
@@ -1847,6 +2197,14 @@ var Control = (function () {
         this._focus = false;
         this._updating = 0;
         this._fullUpdate = false;
+        /**
+         * Occurs when the control gets the focus.
+         */
+        this.gotFocus = new Event$1();
+        /**
+         * Occurs when the control loses the focus.
+         */
+        this.lostFocus = new Event$1();
         console.log("control_constructor");
         // get the host element
         var host = getElement(element);
@@ -2008,11 +2366,126 @@ var Control = (function () {
         var /** @type {?} */ e = getElement(element);
         return e ? asType(e[Control._DATA_KEY], Control, true) : null;
     };
+    /**
+     * @param {?} options
+     * @return {?}
+     */
+    Control.prototype.initialize = function (options) {
+        if (options) {
+            //   this.beginUpdate();
+            copy(this, options);
+            //  this.endUpdate();
+        }
+    };
+    Object.defineProperty(Control.prototype, "hostElement", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return this._e;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Control.prototype, "isTouching", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return Control._touching;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @return {?}
+     */
+    Control.prototype._updateFocusState = function () {
+        var _this = this;
+        // use a timeOut since Chrome and FF sometimes move the focus to the body
+        // before moving it to the new focused element
+        setTimeout(function () {
+            // update state for this control
+            var /** @type {?} */ focus = _this.containsFocus();
+            if (focus != _this._focus) {
+                _this._focus = focus;
+                if (focus) {
+                    _this.onGotFocus();
+                }
+                else {
+                    _this.onLostFocus();
+                }
+                toggleClass(_this._e, 'wj-state-focused', focus);
+            }
+            // update state for any parent controls as well
+            if (_this._e) {
+                for (var /** @type {?} */ e = _this._e.parentElement; e; e = e.parentElement) {
+                    var /** @type {?} */ ctl = Control.getControl(e);
+                    if (ctl) {
+                        ctl._updateFocusState();
+                        break;
+                    }
+                }
+            }
+        });
+    };
+    /**
+     * @return {?}
+     */
+    Control.prototype.containsFocus = function () {
+        // test for disposed controls
+        if (!this._e) {
+            return false;
+        }
+        // scan child controls (they may have popups, TFS 112676)
+        var /** @type {?} */ c = this._e.getElementsByClassName('wj-control');
+        for (var /** @type {?} */ i = 0; i < c.length; i++) {
+            var /** @type {?} */ ctl = Control.getControl(c[i]);
+            if (ctl && ctl != this && ctl.containsFocus()) {
+                return true;
+            }
+        }
+        // check for actual HTML containment
+        return contains(this._e, /** @type {?} */ (document.activeElement));
+    };
+    /**
+     * Raises the \@see:gotFocus event.
+     * @param {?=} e
+     * @return {?}
+     */
+    Control.prototype.onGotFocus = function (e) {
+        this.gotFocus.raise(this, e);
+    };
+    /**
+     * Raises the \@see:lostFocus event.
+     * @param {?=} e
+     * @return {?}
+     */
+    Control.prototype.onLostFocus = function (e) {
+        this.lostFocus.raise(this, e);
+    };
     return Control;
 }());
 Control._DATA_KEY = 'wj-Control';
 Control._REFRESH_INTERVAL = 10;
+/**
+ * Provides arguments for cancellable events.
+ */
+var CancelEventArgs = (function (_super) {
+    __extends(CancelEventArgs, _super);
+    function CancelEventArgs() {
+        var _this = _super.apply(this, arguments) || this;
+        /**
+         * Gets or sets a value that indicates whether the event should be canceled.
+         */
+        _this.cancel = false;
+        return _this;
+    }
+    return CancelEventArgs;
+}(EventArgs));
 //import {Color} from '../../core';
+//import {showPopup, hidePopup} from '../../core/popup'
+//import {Key} from "../../enum/Key";
 /**
  * DropDown control (abstract).
  *
@@ -2035,6 +2508,18 @@ var DropDown = (function (_super) {
         // property storage
         _this._showBtn = true;
         _this._autoExpand = true;
+        /**
+         * Occurs after the drop down is shown or hidden.
+         */
+        _this.isDroppedDownChanged = new Event$1();
+        /**
+         * Occurs before the drop down is shown or hidden.
+         */
+        _this.isDroppedDownChanging = new Event$1();
+        /**
+         * Occurs when the value of the \@see:text property changes.
+         */
+        _this.textChanged = new Event$1();
         console.log("drop_down_constructor_start");
         // instantiate and apply template
         var tpl = '<div style="position:relative" class="wj-template">' +
@@ -2063,11 +2548,276 @@ var DropDown = (function (_super) {
         _this._tbx.autocomplete = 'off';
         // create drop-down element, update button display
         //this._createDropDown();
-        //this._updateBtn();
+        _this._updateBtn();
         // update focus state when the drop-down loses focus
+        _this.addEventListener(_this._dropDown, 'blur', function () {
+            _this._updateFocusState();
+        }, true);
+        // textbox events
+        _this.addEventListener(_this._tbx, 'input', function () {
+            _this._setText(_this.text, false);
+        });
+        _this.addEventListener(_this._tbx, 'click', function () {
+            if (_this._autoExpand) {
+                _this._expandSelection(); // expand the selection to the whole number/word that was clicked
+            }
+        });
+        // in case the drop-down is shown but the control is not (e.g. context menu)
+        _this.addEventListener(_this.dropDown, 'focus', function () {
+            _this._updateFocusState();
+        });
+        // handle clicks on the drop-down button
+        _this.addEventListener(_this._btn, 'click', _this._btnclick.bind(_this));
+        // stop propagation of clicks on the drop-down element
+        // (since they are not children of the hostElement, which can confuse
+        // elements such as Bootstrap menus)
+        _this.addEventListener(_this._dropDown, 'click', function (e) {
+            e.stopPropagation();
+        });
         console.log("drop_down_constructor_finish");
         return _this;
     }
+    Object.defineProperty(DropDown.prototype, "dropDown", {
+        /**
+         * Gets the drop down element shown when the \@see:isDroppedDown
+         * property is set to true.
+         * @return {?}
+         */
+        get: function () {
+            return this._dropDown;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @return {?}
+     */
+    DropDown.prototype._updateBtn = function () {
+        this._btn.tabIndex = -1;
+        this._btn.style.display = this._showBtn ? '' : 'none';
+    };
+    /**
+     * @param {?} text
+     * @param {?} pos
+     * @return {?}
+     */
+    DropDown.prototype._getCharType = function (text, pos) {
+        var /** @type {?} */ chr = text[pos];
+        if (chr >= '0' && chr <= '9')
+            return 0;
+        if ((chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z'))
+            return 1;
+        return -1;
+    };
+    /**
+     * @return {?}
+     */
+    DropDown.prototype._expandSelection = function () {
+        var /** @type {?} */ tbx = this._tbx, /** @type {?} */ val = tbx.value;
+        var /** @type {?} */ start = tbx.selectionStart, /** @type {?} */ end = tbx.selectionEnd;
+        if (val && start == end) {
+            var /** @type {?} */ ct = this._getCharType(val, start);
+            if (ct > -1) {
+                for (; end < val.length; end++) {
+                    if (this._getCharType(val, end) != ct) {
+                        break;
+                    }
+                }
+                for (; start > 0; start--) {
+                    if (this._getCharType(val, start - 1) != ct) {
+                        break;
+                    }
+                }
+                if (start != end) {
+                    tbx.setSelectionRange(start, end);
+                }
+            }
+        }
+    };
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    DropDown.prototype._btnclick = function (e) {
+        this.isDroppedDown = !this.isDroppedDown;
+    };
+    Object.defineProperty(DropDown.prototype, "isDroppedDown", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return this._dropDown.style.display != 'none';
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            value = asBoolean(value) && !this.disabled;
+            if (value != this.isDroppedDown && this.onIsDroppedDownChanging(new CancelEventArgs())) {
+                var /** @type {?} */ dd = this._dropDown;
+                if (value) {
+                    if (!dd.style.minWidth) {
+                        dd.style.minWidth = this.hostElement.getBoundingClientRect().width + 'px';
+                    }
+                    dd.style.display = 'block';
+                    this._updateDropDown();
+                }
+                else {
+                    if (this.containsFocus()) {
+                        if (!this.isTouching || !this.showDropDownButton) {
+                            this.selectAll();
+                            console.log("select_all");
+                        }
+                    }
+                    // hidePopup(dd);
+                    dd.style.display = 'none';
+                }
+                this._updateFocusState();
+                this.onIsDroppedDownChanged();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Raises the \@see:isDroppedDownChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    DropDown.prototype.onIsDroppedDownChanged = function (e) {
+        this.isDroppedDownChanged.raise(this, e);
+    };
+    /**
+     * @return {?}
+     */
+    DropDown.prototype._updateDropDown = function () {
+        if (this.isDroppedDown) {
+            //  this._commitText();
+            console.log("update_drop_down");
+            //  showPopup(this._dropDown, this.hostElement);
+        }
+    };
+    Object.defineProperty(DropDown.prototype, "showDropDownButton", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return this._showBtn;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            this._showBtn = asBoolean(value);
+            this._updateBtn();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @return {?}
+     */
+    DropDown.prototype.containsFocus = function () {
+        return _super.prototype.containsFocus.call(this) || contains(this._dropDown, document.activeElement);
+    };
+    /**
+     * Raises the \@see:isDroppedDownChanging event.
+     * @param {?} e
+     * @return {?}
+     */
+    DropDown.prototype.onIsDroppedDownChanging = function (e) {
+        this.isDroppedDownChanging.raise(this, e);
+        console.log("changing");
+        return !e.cancel;
+    };
+    /**
+     * @param {?=} e
+     * @return {?}
+     */
+    DropDown.prototype.onLostFocus = function (e) {
+        this._commitText();
+        if (!this.containsFocus()) {
+            this.isDroppedDown = false;
+        }
+        console.log("on_lost_focus");
+        _super.prototype.onLostFocus.call(this, e);
+    };
+    /**
+     * @return {?}
+     */
+    DropDown.prototype._commitText = function () {
+        // override in derived classes
+    };
+    /**
+     * @param {?=} e
+     * @return {?}
+     */
+    DropDown.prototype.onGotFocus = function (e) {
+        if (!this.isTouching) {
+            this.selectAll();
+        }
+        console.log("on_got_focus");
+        _super.prototype.onGotFocus.call(this, e);
+    };
+    /**
+     * Sets the focus to the control and selects all its content.
+     * @return {?}
+     */
+    DropDown.prototype.selectAll = function () {
+        if (this._elRef == this._tbx) {
+            setSelectionRange(this._tbx, 0, this.text.length);
+        }
+    };
+    Object.defineProperty(DropDown.prototype, "text", {
+        /**
+         * Gets or sets the text shown on the control.
+         * @return {?}
+         */
+        get: function () {
+            return this._tbx.value;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            if (value != this.text) {
+                this._setText(value, true);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @param {?} text
+     * @param {?} fullMatch
+     * @return {?}
+     */
+    DropDown.prototype._setText = function (text, fullMatch) {
+        // make sure we have a string
+        if (text == null)
+            text = '';
+        text = text.toString();
+        // update element
+        if (text != this._tbx.value) {
+            this._tbx.value = text;
+        }
+        // fire change event
+        if (text != this._oldText) {
+            this._oldText = text;
+            this.onTextChanged();
+        }
+    };
+    /**
+     * Raises the \@see:textChanged event.
+     * @param {?=} e
+     * @return {?}
+     */
+    DropDown.prototype.onTextChanged = function (e) {
+        this.textChanged.raise(this, e);
+    };
     return DropDown;
 }(Control));
 /**
@@ -2088,8 +2838,349 @@ DropDown.controlTemplate = '<div style="position:relative" class="wj-template">'
     'style="display:none;position:absolute;z-index:100;width:auto">' +
     '</div>' +
     '</div>';
+//import {Color} from '../../core';
+//import {FormatItemEventArgs} from './../FormatItemEventArgs';
+//import {isObject} from '../../core';
+//import {asArray} from '../../core';
+//import {EventArgs} from "../../eventArgs/EventArgs";
+//import {escapeHtml} from '../../core';
+/**
+ * The \@see:ListBox control displays a list of items which may contain
+ * plain text or HTML, and allows users to select items with the mouse or
+ * the keyboard.
+ *
+ * Use the \@see:selectedIndex property to determine which item is currently
+ * selected.
+ *
+ * You can populate a \@see:ListBox using an array of strings or you can use
+ * an array of objects, in which case the \@see:displayPath property determines
+ * which object property is displayed on the list.
+ *
+ * To display HTML rather than plain text, set the \@see:isContentHtml property
+ * to true.
+ *
+ * The example below creates a \@see:ListBox control and populates it using
+ * a 'countries' array. The control updates its \@see:selectedIndex and
+ * \@see:selectedItem properties as the user moves the selection.
+ *
+ * \@fiddle:8HnLx
+ */
+var ListBox = (function (_super) {
+    __extends(ListBox, _super);
+    /**
+     * Initializes a new instance of a \@see:ListBox.
+     *
+     * @param {?} element The DOM element that hosts the control, or a selector for the host element (e.g. '#theCtrl').
+     * @param {?=} options The JavaScript object containing initialization data for the control.
+     */
+    function ListBox(element, options) {
+        var _this = _super.call(this, element) || this;
+        _this._html = false;
+        _this._search = '';
+        // instantiate and apply template
+        _this.applyTemplate('wj-control wj-listbox wj-content', null, null);
+        // initializing from <select> tag
+        if (_this._orgTag == 'SELECT') {
+            //this._copyOriginalAttributes(this.hostElement);
+            //this._populateSelectElement(this.hostElement);
+        }
+        // handle mouse and keyboard
+        var host = _this.hostElement;
+        _this.addEventListener(host, 'click', _this._click.bind(_this));
+        return _this;
+        //this.addEventListener(host, 'keydown', this._keydown.bind(this));
+        //this.addEventListener(host, 'keypress', this._keypress.bind(this));
+        // prevent wheel from propagating to parent elements
+        /*this.addEventListener(host, 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll', (e: MouseWheelEvent) => {
+            if (host.scrollHeight > host.clientHeight) {
+                if ((e.wheelDelta > 0 && host.scrollTop == 0) ||
+                    (e.wheelDelta < 0 && host.scrollTop + host.clientHeight >= host.scrollHeight)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+        */
+        // initialize control options
+        //this.initialize(options);
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ListBox.prototype._click = function (e) {
+        console.log("click on list box");
+        // select the item that was clicked
+        var /** @type {?} */ children = this.hostElement.children;
+        for (var /** @type {?} */ index = 0; index < children.length; index++) {
+            if (contains(children[index], e.target)) {
+                this.selectedIndex = index;
+                console.log("list_box_selected_index_set");
+                break;
+            }
+        }
+        // handle checkboxes
+        /*if (this.checkedMemberPath && this.selectedIndex > -1) {
+            const cb = this._getCheckbox(this.selectedIndex);
+            if (cb == e.target) {
+                this.setItemChecked(this.selectedIndex, cb.checked);
+            }
+        }*/
+    };
+    /**
+     * Refreshes the list.
+     * @return {?}
+     */
+    ListBox.prototype.refresh = function () {
+        //super.refresh();
+        //this._populateList();
+    };
+    Object.defineProperty(ListBox.prototype, "selectedIndex", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            //return this._cv ? this._cv.currentPosition : -1;
+            return 1;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            if (this._cv) {
+                //this._cv.moveCurrentToPosition(asNumber(value));
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ListBox.prototype, "itemsSource", {
+        /**
+         * Gets or sets the array or \@see:ICollectionView object that contains the list items.
+         * @return {?}
+         */
+        get: function () {
+            return this._items;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            if (this._items != value) {
+                // unbind current collection view
+                this._items = value;
+                this._cv = asCollectionView(value);
+                // update the list
+                this._populateList();
+                //	this.onItemsChanged();
+                //	this.onSelectedIndexChanged();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @return {?}
+     */
+    ListBox.prototype._populateList = function () {
+        // get ready to populate
+        var /** @type {?} */ host = this.hostElement;
+        if (host) {
+            // remember if we have focus
+            //const focus = this.containsFocus();
+            // fire event so user can clean up any current items
+            //	this.onLoadingItems();
+            // populate
+            host.innerHTML = '';
+            if (this._cv) {
+                for (var /** @type {?} */ i = 0; i < this._cv.items.length; i++) {
+                    // get item text
+                    ///let text = this.getDisplayValue(i);
+                    var /** @type {?} */ text = this._cv.items[i].name;
+                    if (this._html != true) {
+                        //	text = escapeHtml(text);
+                    }
+                    // add checkbox (without tabindex attribute: TFS 135857)
+                    //if (this.checkedMemberPath) {
+                    //const checked = this._cv.items[i][this.checkedMemberPath];
+                    //text          = '<label><input type="checkbox"' + (checked ? ' checked' : '') + '> ' + text + '</label>';
+                    //}
+                    // build item
+                    var /** @type {?} */ item = document.createElement('div');
+                    item.innerHTML = text;
+                    item.className = 'wj-listbox-item';
+                    if (hasClass(/** @type {?} */ (item.firstChild), 'wj-separator')) {
+                        item.className += ' wj-separator';
+                    }
+                    // allow custom formatting
+                    //if (this.formatItem.hasHandlers) {
+                    //	const e = new FormatItemEventArgs(i, this._cv.items[i], item);
+                    //this.onFormatItem(e);
+                    //}
+                    // add item to list
+                    host.appendChild(item);
+                }
+            }
+            // make sure the list is not totally empty
+            // or min-height/max-height won't work properly in IE/Edge
+            if (host.children.length == 0) {
+                host.appendChild(document.createElement('div'));
+            }
+            // restore focus
+            //if (focus && !this.containsFocus()) {
+            //	this.focus();
+            //}
+            // scroll selection into view
+            //this.showSelection();
+            // fire event so user can hook up to items
+            //this.onLoadedItems();
+        }
+    };
+    /**
+     * Highlights the selected item and scrolls it into view.
+     * @return {?}
+     */
+    ListBox.prototype.showSelection = function () {
+        console.log("show selection _started");
+        var /** @type {?} */ index = this.selectedIndex, /** @type {?} */ host = this.hostElement, /** @type {?} */ children = host.children;
+        var /** @type {?} */ e;
+        // highlight
+        for (var /** @type {?} */ i = 0; i < children.length; i++) {
+            e = (children[i]);
+            //toggleClass(e, 'wj-state-selected', i == index);
+        }
+        // scroll into view
+        if (index > -1 && index < children.length) {
+            e = (children[index]);
+            var /** @type {?} */ rco = e.getBoundingClientRect();
+            var /** @type {?} */ rcc = this.hostElement.getBoundingClientRect();
+            if (rco.bottom > rcc.bottom) {
+                host.scrollTop += rco.bottom - rcc.bottom;
+            }
+            else if (rco.top < rcc.top) {
+                host.scrollTop -= rcc.top - rco.top;
+            }
+        }
+        // make sure the focus is within the selected element (TFS 135278)
+        if (index > -1 && this.containsFocus()) {
+            e = (children[index]);
+            if (e instanceof HTMLElement && !contains(e, document.activeElement)) {
+                e.focus();
+            }
+        }
+        console.log("show selection _finished");
+    };
+    return ListBox;
+}(Control));
+//import {Color} from '../../core';
+/**
+ * The \@see:ComboBox control allows users to pick strings from lists.
+ *
+ * The control automatically completes entries as the user types, and allows users
+ * to show a drop-down list with the items available.
+ *
+ * Use the \@see:selectedIndex or the \@see:text properties to determine which
+ * item is currently selected.
+ *
+ * The \@see:isEditable property determines whether users can enter values that
+ * are not present in the list.
+ *
+ * The example below creates a \@see:ComboBox control and populates it with a list
+ * of countries. The \@see:ComboBox searches for the country as the user types.
+ * The <b>isEditable</b> property is set to false, so the user is forced to
+ * select one of the items in the list.
+ *
+ * The example also shows how to create and populate a \@see:ComboBox using
+ * an HTML <b>&lt;select;&gt</b> element with <b>&lt;option;&gt</b> child
+ * elements.
+ *
+ * \@fiddle:8HnLx
+ */
+var ComboBox = (function (_super) {
+    __extends(ComboBox, _super);
+    /**
+     * Initializes a new instance of a \@see:ComboBox control.
+     *
+     * @param {?} element The DOM element that hosts the control, or a selector for the host element (e.g. '#theCtrl').
+     * @param {?=} options The JavaScript object containing initialization data for the control.
+     */
+    function ComboBox(element, options) {
+        var _this = _super.call(this, element) || this;
+        // property storage
+        _this._required = true;
+        _this._editable = false;
+        // private stuff
+        _this._composing = false;
+        _this._deleting = false;
+        _this._settingText = false;
+        console.log("combo_constructor_start");
+        _this._lbx = new ListBox(_this._dropDown);
+        // handle IME
+        _this.addEventListener(_this._tbx, 'compositionstart', function () {
+            _this._composing = true;
+        });
+        _this.addEventListener(_this._tbx, 'compositionend', function () {
+            _this._composing = false;
+            _this._setText(_this.text, true);
+        });
+        // initialize control options
+        _this.initialize(options);
+        console.log("combo_constructor_finish");
+        return _this;
+    }
+    /**
+     * @param {?} text
+     * @param {?} fullMatch
+     * @return {?}
+     */
+    ComboBox.prototype._setText = function (text, fullMatch) {
+        console.log("combo_box_set_text_start");
+        // not while composing IME text...
+        if (this._composing)
+            return;
+        // prevent reentrant calls while moving CollectionView cursor
+        if (this._settingText)
+            return;
+        this._settingText = true;
+        // make sure we have a string
+        if (text == null)
+            text = '';
+        text = text.toString();
+        _super.prototype._setText.call(this, text, fullMatch);
+        console.log("combo_box_set_text_finish");
+    };
+    Object.defineProperty(ComboBox.prototype, "itemsSource", {
+        /**
+         * Gets or sets the array or \@see:ICollectionView object that contains the items to select from.
+         * @return {?}
+         */
+        get: function () {
+            return this._lbx.itemsSource;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            this._lbx.itemsSource = value;
+            this._updateBtn();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @return {?}
+     */
+    ComboBox.prototype._createDropDown = function () {
+        console.log("create drop down");
+    };
+    return ComboBox;
+}(DropDown));
 
 exports.DropDown = DropDown;
+exports.ComboBox = ComboBox;
 exports.ClarityModule = ClarityModule;
 exports.ɵa = Control;
 

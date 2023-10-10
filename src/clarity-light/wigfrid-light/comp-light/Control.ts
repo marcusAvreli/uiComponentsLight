@@ -1,6 +1,6 @@
 import {Size} from "./../core/index";
-//import {EventArgs} from "../eventArgs/EventArgs";
-//import {Event} from "../event/Event";
+import {EventArgs} from "../eventArgs/EventArgs";
+import {Event} from "../event/Event";
 import {CollectionView} from "../collections-light/CollectionView";
 import {
     assert,
@@ -207,5 +207,92 @@ export class Control {
 	  static getControl(element: any): Control {
         const e = getElement(element);
         return e ? asType(e[Control._DATA_KEY], Control, true) : null;
+    }
+	
+	 initialize(options: any) {
+        if (options) {
+         //   this.beginUpdate();
+            copy(this, options);
+          //  this.endUpdate();
+        }
+    }
+	 get hostElement(): HTMLElement {
+        return this._e;
+    }
+	   get isTouching(): boolean {
+        return Control._touching;
+    }
+	
+	  // update focus state and raise got/lost focus events
+    _updateFocusState() {
+
+        // use a timeOut since Chrome and FF sometimes move the focus to the body
+        // before moving it to the new focused element
+        setTimeout(() => {
+
+            // update state for this control
+            const focus = this.containsFocus();
+            if (focus != this._focus) {
+                this._focus = focus;
+                if (focus) {
+                    this.onGotFocus();
+                } else {
+                    this.onLostFocus();
+                }
+                toggleClass(this._e, 'wj-state-focused', focus);
+            }
+
+            // update state for any parent controls as well
+            if (this._e) {
+                for (let e = this._e.parentElement; e; e = e.parentElement) {
+                    const ctl = Control.getControl(e);
+                    if (ctl) {
+                        ctl._updateFocusState();
+                        break;
+                    }
+                }
+            }
+        });
+    }
+	
+	 containsFocus(): boolean {
+
+        // test for disposed controls
+        if (!this._e) {
+            return false;
+        }
+
+        // scan child controls (they may have popups, TFS 112676)
+        const c = this._e.getElementsByClassName('wj-control');
+        for (let i = 0; i < c.length; i++) {
+            const ctl = Control.getControl(c[i]);
+            if (ctl && ctl != this && ctl.containsFocus()) {
+                return true;
+            }
+        }
+
+        // check for actual HTML containment
+        return contains(this._e, <HTMLElement>document.activeElement);
+    }
+	
+	 /**
+     * Occurs when the control gets the focus.
+     */
+    gotFocus = new Event();
+    /**
+     * Raises the @see:gotFocus event.
+     */
+    onGotFocus(e?: EventArgs) {
+        this.gotFocus.raise(this, e);
+    }
+    /**
+     * Occurs when the control loses the focus.
+     */
+    lostFocus = new Event();
+    /**
+     * Raises the @see:lostFocus event.
+     */
+    onLostFocus(e?: EventArgs) {
+        this.lostFocus.raise(this, e);
     }
 }

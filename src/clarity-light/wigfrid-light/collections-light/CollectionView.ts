@@ -99,7 +99,7 @@ export class CollectionView  {
 
         // check that sortDescriptions contains SortDescriptions
        
-
+this._pgView = sourceCollection;
         // initialize the source collection
        // this.sourceCollection = sourceCollection ? sourceCollection : new ObservableArray();
     }
@@ -172,7 +172,9 @@ export class CollectionView  {
         }
         return false;
     }
-
+get items(): any[] {
+        return this._pgView;
+    }
     /**
      * Gets or sets a value that determines whether the control should
      * track changes to the data.

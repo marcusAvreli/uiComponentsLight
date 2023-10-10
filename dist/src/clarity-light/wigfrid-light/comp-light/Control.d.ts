@@ -1,3 +1,5 @@
+import { EventArgs } from "../eventArgs/EventArgs";
+import { Event } from "../event/Event";
 /**
  * Base class for all Wijmo controls.
  *
@@ -78,4 +80,25 @@ export declare class Control {
      */
     getTemplate(): string;
     static getControl(element: any): Control;
+    initialize(options: any): void;
+    readonly hostElement: HTMLElement;
+    readonly isTouching: boolean;
+    _updateFocusState(): void;
+    containsFocus(): boolean;
+    /**
+    * Occurs when the control gets the focus.
+    */
+    gotFocus: Event;
+    /**
+     * Raises the @see:gotFocus event.
+     */
+    onGotFocus(e?: EventArgs): void;
+    /**
+     * Occurs when the control loses the focus.
+     */
+    lostFocus: Event;
+    /**
+     * Raises the @see:lostFocus event.
+     */
+    onLostFocus(e?: EventArgs): void;
 }
