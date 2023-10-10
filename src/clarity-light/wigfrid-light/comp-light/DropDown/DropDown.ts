@@ -61,7 +61,7 @@ export class DropDown extends Control {
      */
     constructor(element: any, options?) {
         super(element,  true);
-		console.log("drop_down_constructor_start");
+		//console.log("drop_down_constructor_start");
         // instantiate and apply template
         const tpl =  '<div style="position:relative" class="wj-template">' +
         '<div class="wj-input">' +
@@ -132,7 +132,7 @@ export class DropDown extends Control {
                 e.stopPropagation();
             }
         );
-       console.log("drop_down_constructor_finish");
+     //  console.log("drop_down_constructor_finish");
     }
 	
 	
@@ -209,7 +209,7 @@ export class DropDown extends Control {
                 if (this.containsFocus()) {
                     if (!this.isTouching || !this.showDropDownButton) {
                        this.selectAll();
-					  console.log("select_all");
+					//  console.log("select_all");
                     }
                 }
                // hidePopup(dd);
@@ -234,7 +234,7 @@ export class DropDown extends Control {
 	 _updateDropDown() {
         if (this.isDroppedDown) {
           //  this._commitText();
-		  console.log("update_drop_down");
+		//  console.log("update_drop_down");
           //  showPopup(this._dropDown, this.hostElement);
         }
     }
@@ -260,7 +260,7 @@ export class DropDown extends Control {
      */
     onIsDroppedDownChanging(e: CancelEventArgs): boolean {
         this.isDroppedDownChanging.raise(this, e);
-		console.log("changing");
+		//console.log("changing");
         return !e.cancel;
     }
 	// close the drop-down when losing focus
@@ -269,7 +269,7 @@ export class DropDown extends Control {
         if (!this.containsFocus()) {
             this.isDroppedDown = false;
         }
-		console.log("on_lost_focus");
+		//console.log("on_lost_focus");
         super.onLostFocus(e);
     }
 	 _commitText() {
@@ -281,7 +281,7 @@ export class DropDown extends Control {
         if (!this.isTouching) {
             this.selectAll();
         }
-		console.log("on_got_focus");
+		//console.log("on_got_focus");
         super.onGotFocus(e);
     }
 	 /**

@@ -73,6 +73,11 @@ export declare class ListBox extends Control {
      * Raises the @see:selectedIndexChanged event.
      */
     onSelectedIndexChanged(e?: EventArgs): void;
+    getDisplayValue(index: number): string;
+    /**
+     * Gets or sets the name of the property to use as the visual representation of the items.
+     */
+    displayMemberPath: string;
     /**
      * Highlights the selected item and scrolls it into view.
      */

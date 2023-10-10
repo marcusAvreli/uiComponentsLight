@@ -55,7 +55,7 @@ export class Control {
      * @param invalidateOnResize Whether the control should be invalidated when it is resized.
      */
     constructor(element: any, options = null, invalidateOnResize = false) {
-	console.log("control_constructor");
+	//console.log("control_constructor");
         // get the host element
         let host = getElement(element);
 		  this._e = host;
@@ -122,7 +122,7 @@ export class Control {
      * determines how the control submits data when used in forms.
      */
     applyTemplate(classNames: string, template: string, parts: Object, namePart?: string): HTMLElement {
-		console.log("apply_template_start");
+		//console.log("apply_template_start");
         const host = this._e;
 
         // apply standard classes to host element
@@ -184,7 +184,7 @@ export class Control {
         }
 
         // return template
-		console.log("apply_template_finish");
+		//console.log("apply_template_finish");
         return tpl;
     }
     /**

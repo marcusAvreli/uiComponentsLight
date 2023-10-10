@@ -5,7 +5,7 @@ import {Control} from '../Control';
 import {asCollectionView} from '../../core';
 //import {asFunction} from '../../core';
 import {asString} from '../../core';
-//import {hasItems} from '../../core';
+import {hasItems} from '../../core';
 import {asNumber} from '../../core';
 import {toggleClass} from '../../core';
 import {contains} from '../../core';
@@ -121,13 +121,13 @@ get isContentHtml(): boolean {
 	//--------------------------------------------------------------------------
 	//#region ** overrides
 private _click(e: MouseEvent) {
-		console.log("click on list box");
+		//console.log("click on list box");
 		// select the item that was clicked
 		const children = this.hostElement.children;
 		for (let index = 0; index < children.length; index++) {
 			if (contains(children[index], e.target)) {
 				this.selectedIndex = index;
-				console.log("list_box_selected_index_set:"+this.selectedIndex);
+				//console.log("list_box_selected_index_set:"+this.selectedIndex);
 				break;
 			}
 		}
@@ -213,13 +213,13 @@ get selectedIndex(): number {
 	}
 	// populate the list from the current itemsSource
 	private _populateList() {
-
+		console.log("populate_list_start");
 		// get ready to populate
 		const host = this.hostElement;
 		if (host) {
 
 			// remember if we have focus
-			//const focus = this.containsFocus();
+			const focus = this.containsFocus();
 
 			// fire event so user can clean up any current items
 		//	this.onLoadingItems();
@@ -231,7 +231,7 @@ get selectedIndex(): number {
 
 					// get item text
 					///let text = this.getDisplayValue(i);
-					let text = this._cv.items[i].name;
+					let text = this.getDisplayValue(i);
 					if (this._html != true) {
 					//	text = escapeHtml(text);
 					}
@@ -278,6 +278,7 @@ get selectedIndex(): number {
 			// fire event so user can hook up to items
 			//this.onLoadedItems();
 		}
+		console.log("populate_list_finish");
 	}
 		/**
 	 * Occurs when the value of the @see:selectedIndex property changes.
@@ -289,11 +290,45 @@ get selectedIndex(): number {
 	onSelectedIndexChanged(e?: EventArgs) {
 		this.selectedIndexChanged.raise(this, e);
 	}
+	
+	getDisplayValue(index: number): string {
+
+		// get the text or html
+		let item = null;
+		if (index > -1 && hasItems(this._cv)) {
+			item = this._cv.items[index];
+			if (this.displayMemberPath) {
+				item = item[this.displayMemberPath];
+			}
+		}
+		let text = item != null ? item.toString() : '';
+
+		// allow caller to override/modify the text or html
+		/*
+		if (this.itemFormatter) {
+			text = this.itemFormatter(index, text);
+		}
+*/
+		// return the result
+		return text;
+	}
+	/**
+	 * Gets or sets the name of the property to use as the visual representation of the items.
+	 */
+	get displayMemberPath(): string {
+		return this._pathDisplay;
+	}
+	set displayMemberPath(value: string) {
+		if (value != this._pathDisplay) {
+			this._pathDisplay = asString(value);
+			this._populateList();
+		}
+	}
 	/**
 	 * Highlights the selected item and scrolls it into view.
 	 */
 	showSelection() {
-	console.log("show selection _started");
+	//console.log("show selection _started");
 		const index    = this.selectedIndex,
               host     = this.hostElement,
               children = host.children;
@@ -324,7 +359,7 @@ get selectedIndex(): number {
 				e.focus();
 			}
 		}
-		console.log("show selection _finished");
+		//console.log("show selection _finished");
 	}
 	
 	

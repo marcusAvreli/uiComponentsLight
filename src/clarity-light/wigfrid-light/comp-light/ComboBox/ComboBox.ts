@@ -63,7 +63,7 @@ export class ComboBox extends DropDown {
 	 */
 	constructor(element: any, options?) {
 		super(element);
-console.log("combo_constructor_start");
+//console.log("combo_constructor_start");
 		
 		// handle IME
 		/*
@@ -77,14 +77,23 @@ console.log("combo_constructor_start");
 		*/
 			// initialize control options
 		this.initialize(options);
-		console.log("combo_constructor_finish");
+		//console.log("combo_constructor_finish");
 	}
 
 	//--------------------------------------------------------------------------
 	//#region ** object model
-
+get displayMemberPath(): string {
+		return this._lbx.displayMemberPath;
+	}
+	set displayMemberPath(value: string) {
+		this._lbx.displayMemberPath = value;
+		const text = this.getDisplayText();
+		if (this.text != text) {
+			this._setText(text, true);
+		}
+	}
 _setText(text: string, fullMatch: boolean) {
-			console.log("combo_box_set_text_start");
+			//console.log("combo_box_set_text_start");
 		// not while composing IME text...
 		if (this._composing) return;
 
@@ -96,7 +105,7 @@ _setText(text: string, fullMatch: boolean) {
 		if (text == null) text = '';
 		text = text.toString();
 		super._setText(text, fullMatch);
-		console.log("combo_box_set_text_finish");
+		//console.log("combo_box_set_text_finish");
 		
 		this._settingText = false;
 
@@ -113,7 +122,7 @@ _setText(text: string, fullMatch: boolean) {
 	}
 	// create the drop-down element
 	_createDropDown() {
-		console.log("create drop down");
+		//console.log("create drop down");
 		this._lbx = new ListBox(this._dropDown);
 			this._lbx.selectedIndexChanged.addHandler(() => {
 			this._updateBtn();

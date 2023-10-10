@@ -42,6 +42,7 @@ export declare class ComboBox extends DropDown {
      * @param options The JavaScript object containing initialization data for the control.
      */
     constructor(element: any, options?: any);
+    displayMemberPath: string;
     _setText(text: string, fullMatch: boolean): void;
     /**
      * Gets or sets the array or @see:ICollectionView object that contains the items to select from.

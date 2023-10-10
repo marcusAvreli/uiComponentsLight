@@ -2340,7 +2340,7 @@ class Control {
          * Occurs when the control loses the focus.
          */
         this.lostFocus = new Event$1();
-        console.log("control_constructor");
+        //console.log("control_constructor");
         // get the host element
         let host = getElement(element);
         this._e = host;
@@ -2421,7 +2421,7 @@ class Control {
      * @return {?}
      */
     applyTemplate(classNames, template, parts, namePart) {
-        console.log("apply_template_start");
+        //console.log("apply_template_start");
         const /** @type {?} */ host = this._e;
         // apply standard classes to host element
         if (classNames) {
@@ -2473,7 +2473,7 @@ class Control {
             }
         }
         // return template
-        console.log("apply_template_finish");
+        //console.log("apply_template_finish");
         return tpl;
     }
     /**
@@ -2625,7 +2625,7 @@ class DropDown extends Control {
          * Occurs when the value of the \@see:text property changes.
          */
         this.textChanged = new Event$1();
-        console.log("drop_down_constructor_start");
+        //console.log("drop_down_constructor_start");
         // instantiate and apply template
         const tpl = '<div style="position:relative" class="wj-template">' +
             '<div class="wj-input">' +
@@ -2679,7 +2679,7 @@ class DropDown extends Control {
         this.addEventListener(this._dropDown, 'click', (e) => {
             e.stopPropagation();
         });
-        console.log("drop_down_constructor_finish");
+        //  console.log("drop_down_constructor_finish");
     }
     /**
      * @return {?}
@@ -2772,7 +2772,7 @@ class DropDown extends Control {
                 if (this.containsFocus()) {
                     if (!this.isTouching || !this.showDropDownButton) {
                         this.selectAll();
-                        console.log("select_all");
+                        //  console.log("select_all");
                     }
                 }
                 // hidePopup(dd);
@@ -2796,7 +2796,7 @@ class DropDown extends Control {
     _updateDropDown() {
         if (this.isDroppedDown) {
             //  this._commitText();
-            console.log("update_drop_down");
+            //  console.log("update_drop_down");
             //  showPopup(this._dropDown, this.hostElement);
         }
     }
@@ -2827,7 +2827,7 @@ class DropDown extends Control {
      */
     onIsDroppedDownChanging(e) {
         this.isDroppedDownChanging.raise(this, e);
-        console.log("changing");
+        //console.log("changing");
         return !e.cancel;
     }
     /**
@@ -2839,7 +2839,7 @@ class DropDown extends Control {
         if (!this.containsFocus()) {
             this.isDroppedDown = false;
         }
-        console.log("on_lost_focus");
+        //console.log("on_lost_focus");
         super.onLostFocus(e);
     }
     /**
@@ -2856,7 +2856,7 @@ class DropDown extends Control {
         if (!this.isTouching) {
             this.selectAll();
         }
-        console.log("on_got_focus");
+        //console.log("on_got_focus");
         super.onGotFocus(e);
     }
     /**
@@ -2935,7 +2935,6 @@ DropDown.controlTemplate = '<div style="position:relative" class="wj-template">'
 //import {Color} from '../../core';
 //import {FormatItemEventArgs} from './../FormatItemEventArgs';
 //import {asFunction} from '../../core';
-//import {hasItems} from '../../core';
 //import {escapeHtml} from '../../core';
 //import {Key} from "../../enum/Key";
 //import {tryCast} from '../../core';
@@ -3036,13 +3035,13 @@ class ListBox extends Control {
      * @return {?}
      */
     _click(e) {
-        console.log("click on list box");
+        //console.log("click on list box");
         // select the item that was clicked
         const /** @type {?} */ children = this.hostElement.children;
         for (let /** @type {?} */ index = 0; index < children.length; index++) {
             if (contains(children[index], e.target)) {
                 this.selectedIndex = index;
-                console.log("list_box_selected_index_set:" + this.selectedIndex);
+                //console.log("list_box_selected_index_set:"+this.selectedIndex);
                 break;
             }
         }
@@ -3146,11 +3145,12 @@ class ListBox extends Control {
      * @return {?}
      */
     _populateList() {
+        console.log("populate_list_start");
         // get ready to populate
         const /** @type {?} */ host = this.hostElement;
         if (host) {
             // remember if we have focus
-            //const focus = this.containsFocus();
+            const /** @type {?} */ focus = this.containsFocus();
             // fire event so user can clean up any current items
             //	this.onLoadingItems();
             // populate
@@ -3159,7 +3159,7 @@ class ListBox extends Control {
                 for (let /** @type {?} */ i = 0; i < this._cv.items.length; i++) {
                     // get item text
                     ///let text = this.getDisplayValue(i);
-                    let /** @type {?} */ text = this._cv.items[i].name;
+                    let /** @type {?} */ text = this.getDisplayValue(i);
                     if (this._html != true) {
                         //	text = escapeHtml(text);
                     }
@@ -3198,6 +3198,7 @@ class ListBox extends Control {
             // fire event so user can hook up to items
             //this.onLoadedItems();
         }
+        console.log("populate_list_finish");
     }
     /**
      * Raises the \@see:selectedIndexChanged event.
@@ -3208,11 +3209,51 @@ class ListBox extends Control {
         this.selectedIndexChanged.raise(this, e);
     }
     /**
+     * @param {?} index
+     * @return {?}
+     */
+    getDisplayValue(index) {
+        // get the text or html
+        let /** @type {?} */ item = null;
+        if (index > -1 && hasItems(this._cv)) {
+            item = this._cv.items[index];
+            if (this.displayMemberPath) {
+                item = item[this.displayMemberPath];
+            }
+        }
+        let /** @type {?} */ text = item != null ? item.toString() : '';
+        // allow caller to override/modify the text or html
+        /*
+        if (this.itemFormatter) {
+            text = this.itemFormatter(index, text);
+        }
+*/
+        // return the result
+        return text;
+    }
+    /**
+     * Gets or sets the name of the property to use as the visual representation of the items.
+     * @return {?}
+     */
+    get displayMemberPath() {
+        return this._pathDisplay;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set displayMemberPath(value) {
+        if (value != this._pathDisplay) {
+            this._pathDisplay = asString(value);
+            this._populateList();
+        }
+    }
+    /**
      * Highlights the selected item and scrolls it into view.
      * @return {?}
      */
     showSelection() {
-        console.log("show selection _started");
+        //console.log("show selection _started");
         const /** @type {?} */ index = this.selectedIndex, /** @type {?} */ host = this.hostElement, /** @type {?} */ children = host.children;
         let /** @type {?} */ e;
         // highlight
@@ -3239,7 +3280,7 @@ class ListBox extends Control {
                 e.focus();
             }
         }
-        console.log("show selection _finished");
+        //console.log("show selection _finished");
     }
     /**
      * @return {?}
@@ -3329,7 +3370,7 @@ class ComboBox extends DropDown {
         this._deleting = false;
         this._settingText = false;
         this.selectedIndexChanged = new Event$1();
-        console.log("combo_constructor_start");
+        //console.log("combo_constructor_start");
         // handle IME
         /*
         this.addEventListener(this._tbx, 'compositionstart', () => {
@@ -3342,7 +3383,24 @@ class ComboBox extends DropDown {
         */
         // initialize control options
         this.initialize(options);
-        console.log("combo_constructor_finish");
+        //console.log("combo_constructor_finish");
+    }
+    /**
+     * @return {?}
+     */
+    get displayMemberPath() {
+        return this._lbx.displayMemberPath;
+    }
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    set displayMemberPath(value) {
+        this._lbx.displayMemberPath = value;
+        const /** @type {?} */ text = this.getDisplayText();
+        if (this.text != text) {
+            this._setText(text, true);
+        }
     }
     /**
      * @param {?} text
@@ -3350,7 +3408,7 @@ class ComboBox extends DropDown {
      * @return {?}
      */
     _setText(text, fullMatch) {
-        console.log("combo_box_set_text_start");
+        //console.log("combo_box_set_text_start");
         // not while composing IME text...
         if (this._composing)
             return;
@@ -3363,7 +3421,7 @@ class ComboBox extends DropDown {
             text = '';
         text = text.toString();
         super._setText(text, fullMatch);
-        console.log("combo_box_set_text_finish");
+        //console.log("combo_box_set_text_finish");
         this._settingText = false;
     }
     /**
@@ -3385,7 +3443,7 @@ class ComboBox extends DropDown {
      * @return {?}
      */
     _createDropDown() {
-        console.log("create drop down");
+        //console.log("create drop down");
         this._lbx = new ListBox(this._dropDown);
         this._lbx.selectedIndexChanged.addHandler(() => {
             this._updateBtn();

@@ -2334,7 +2334,7 @@ var Control = (function () {
          * Occurs when the control loses the focus.
          */
         this.lostFocus = new Event$1();
-        console.log("control_constructor");
+        //console.log("control_constructor");
         // get the host element
         var host = getElement(element);
         this._e = host;
@@ -2420,7 +2420,7 @@ var Control = (function () {
      * @return {?}
      */
     Control.prototype.applyTemplate = function (classNames, template, parts, namePart) {
-        console.log("apply_template_start");
+        //console.log("apply_template_start");
         var /** @type {?} */ host = this._e;
         // apply standard classes to host element
         if (classNames) {
@@ -2472,7 +2472,7 @@ var Control = (function () {
             }
         }
         // return template
-        console.log("apply_template_finish");
+        //console.log("apply_template_finish");
         return tpl;
     };
     /**
@@ -2634,7 +2634,7 @@ var DropDown = (function (_super) {
          * Occurs when the value of the \@see:text property changes.
          */
         _this.textChanged = new Event$1();
-        console.log("drop_down_constructor_start");
+        //console.log("drop_down_constructor_start");
         // instantiate and apply template
         var tpl = '<div style="position:relative" class="wj-template">' +
             '<div class="wj-input">' +
@@ -2688,8 +2688,8 @@ var DropDown = (function (_super) {
         _this.addEventListener(_this._dropDown, 'click', function (e) {
             e.stopPropagation();
         });
-        console.log("drop_down_constructor_finish");
         return _this;
+        //  console.log("drop_down_constructor_finish");
     }
     /**
      * @return {?}
@@ -2787,7 +2787,7 @@ var DropDown = (function (_super) {
                     if (this.containsFocus()) {
                         if (!this.isTouching || !this.showDropDownButton) {
                             this.selectAll();
-                            console.log("select_all");
+                            //  console.log("select_all");
                         }
                     }
                     // hidePopup(dd);
@@ -2814,7 +2814,7 @@ var DropDown = (function (_super) {
     DropDown.prototype._updateDropDown = function () {
         if (this.isDroppedDown) {
             //  this._commitText();
-            console.log("update_drop_down");
+            //  console.log("update_drop_down");
             //  showPopup(this._dropDown, this.hostElement);
         }
     };
@@ -2849,7 +2849,7 @@ var DropDown = (function (_super) {
      */
     DropDown.prototype.onIsDroppedDownChanging = function (e) {
         this.isDroppedDownChanging.raise(this, e);
-        console.log("changing");
+        //console.log("changing");
         return !e.cancel;
     };
     /**
@@ -2861,7 +2861,7 @@ var DropDown = (function (_super) {
         if (!this.containsFocus()) {
             this.isDroppedDown = false;
         }
-        console.log("on_lost_focus");
+        //console.log("on_lost_focus");
         _super.prototype.onLostFocus.call(this, e);
     };
     /**
@@ -2878,7 +2878,7 @@ var DropDown = (function (_super) {
         if (!this.isTouching) {
             this.selectAll();
         }
-        console.log("on_got_focus");
+        //console.log("on_got_focus");
         _super.prototype.onGotFocus.call(this, e);
     };
     /**
@@ -2961,7 +2961,6 @@ DropDown.controlTemplate = '<div style="position:relative" class="wj-template">'
 //import {Color} from '../../core';
 //import {FormatItemEventArgs} from './../FormatItemEventArgs';
 //import {asFunction} from '../../core';
-//import {hasItems} from '../../core';
 //import {escapeHtml} from '../../core';
 //import {Key} from "../../enum/Key";
 //import {tryCast} from '../../core';
@@ -3068,13 +3067,13 @@ var ListBox = (function (_super) {
      * @return {?}
      */
     ListBox.prototype._click = function (e) {
-        console.log("click on list box");
+        //console.log("click on list box");
         // select the item that was clicked
         var /** @type {?} */ children = this.hostElement.children;
         for (var /** @type {?} */ index = 0; index < children.length; index++) {
             if (contains(children[index], e.target)) {
                 this.selectedIndex = index;
-                console.log("list_box_selected_index_set:" + this.selectedIndex);
+                //console.log("list_box_selected_index_set:"+this.selectedIndex);
                 break;
             }
         }
@@ -3194,11 +3193,12 @@ var ListBox = (function (_super) {
      * @return {?}
      */
     ListBox.prototype._populateList = function () {
+        console.log("populate_list_start");
         // get ready to populate
         var /** @type {?} */ host = this.hostElement;
         if (host) {
             // remember if we have focus
-            //const focus = this.containsFocus();
+            var /** @type {?} */ focus = this.containsFocus();
             // fire event so user can clean up any current items
             //	this.onLoadingItems();
             // populate
@@ -3207,7 +3207,7 @@ var ListBox = (function (_super) {
                 for (var /** @type {?} */ i = 0; i < this._cv.items.length; i++) {
                     // get item text
                     ///let text = this.getDisplayValue(i);
-                    var /** @type {?} */ text = this._cv.items[i].name;
+                    var /** @type {?} */ text = this.getDisplayValue(i);
                     if (this._html != true) {
                         //	text = escapeHtml(text);
                     }
@@ -3246,6 +3246,7 @@ var ListBox = (function (_super) {
             // fire event so user can hook up to items
             //this.onLoadedItems();
         }
+        console.log("populate_list_finish");
     };
     /**
      * Raises the \@see:selectedIndexChanged event.
@@ -3256,11 +3257,55 @@ var ListBox = (function (_super) {
         this.selectedIndexChanged.raise(this, e);
     };
     /**
+     * @param {?} index
+     * @return {?}
+     */
+    ListBox.prototype.getDisplayValue = function (index) {
+        // get the text or html
+        var /** @type {?} */ item = null;
+        if (index > -1 && hasItems(this._cv)) {
+            item = this._cv.items[index];
+            if (this.displayMemberPath) {
+                item = item[this.displayMemberPath];
+            }
+        }
+        var /** @type {?} */ text = item != null ? item.toString() : '';
+        // allow caller to override/modify the text or html
+        /*
+        if (this.itemFormatter) {
+            text = this.itemFormatter(index, text);
+        }
+*/
+        // return the result
+        return text;
+    };
+    Object.defineProperty(ListBox.prototype, "displayMemberPath", {
+        /**
+         * Gets or sets the name of the property to use as the visual representation of the items.
+         * @return {?}
+         */
+        get: function () {
+            return this._pathDisplay;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            if (value != this._pathDisplay) {
+                this._pathDisplay = asString(value);
+                this._populateList();
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
      * Highlights the selected item and scrolls it into view.
      * @return {?}
      */
     ListBox.prototype.showSelection = function () {
-        console.log("show selection _started");
+        //console.log("show selection _started");
         var /** @type {?} */ index = this.selectedIndex, /** @type {?} */ host = this.hostElement, /** @type {?} */ children = host.children;
         var /** @type {?} */ e;
         // highlight
@@ -3287,7 +3332,7 @@ var ListBox = (function (_super) {
                 e.focus();
             }
         }
-        console.log("show selection _finished");
+        //console.log("show selection _finished");
     };
     Object.defineProperty(ListBox.prototype, "selectedValue", {
         /**
@@ -3386,7 +3431,7 @@ var ComboBox = (function (_super) {
         _this._deleting = false;
         _this._settingText = false;
         _this.selectedIndexChanged = new Event$1();
-        console.log("combo_constructor_start");
+        //console.log("combo_constructor_start");
         // handle IME
         /*
         this.addEventListener(this._tbx, 'compositionstart', () => {
@@ -3399,16 +3444,37 @@ var ComboBox = (function (_super) {
         */
         // initialize control options
         _this.initialize(options);
-        console.log("combo_constructor_finish");
         return _this;
+        //console.log("combo_constructor_finish");
     }
+    Object.defineProperty(ComboBox.prototype, "displayMemberPath", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return this._lbx.displayMemberPath;
+        },
+        /**
+         * @param {?} value
+         * @return {?}
+         */
+        set: function (value) {
+            this._lbx.displayMemberPath = value;
+            var /** @type {?} */ text = this.getDisplayText();
+            if (this.text != text) {
+                this._setText(text, true);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} text
      * @param {?} fullMatch
      * @return {?}
      */
     ComboBox.prototype._setText = function (text, fullMatch) {
-        console.log("combo_box_set_text_start");
+        //console.log("combo_box_set_text_start");
         // not while composing IME text...
         if (this._composing)
             return;
@@ -3421,7 +3487,7 @@ var ComboBox = (function (_super) {
             text = '';
         text = text.toString();
         _super.prototype._setText.call(this, text, fullMatch);
-        console.log("combo_box_set_text_finish");
+        //console.log("combo_box_set_text_finish");
         this._settingText = false;
     };
     Object.defineProperty(ComboBox.prototype, "itemsSource", {
@@ -3448,7 +3514,7 @@ var ComboBox = (function (_super) {
      */
     ComboBox.prototype._createDropDown = function () {
         var _this = this;
-        console.log("create drop down");
+        //console.log("create drop down");
         this._lbx = new ListBox(this._dropDown);
         this._lbx.selectedIndexChanged.addHandler(function () {
             _this._updateBtn();
