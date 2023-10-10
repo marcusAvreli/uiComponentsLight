@@ -11,7 +11,7 @@ import { ModuleWithProviders, NgModule } from "@angular/core";
 //import {CHECKBOX_DIRECTIVES} from "./checkboxes/index";
 //import {CODE_HIGHLIGHT_DIRECTIVES} from "./code/index";
 //import {DATAGRID_DIRECTIVES} from "./datagrid/index";
-import {DROPDOWN_DIRECTIVES} from "./dropdown/index";
+//import {DROPDOWN_DIRECTIVES} from "./dropdown/index";
 //import {LAYOUT_DIRECTIVES} from "./layout/index";
 //import {MODAL_DIRECTIVES} from "./modal/index";
 //import {NAVIGATION_DIRECTIVES} from "./nav/index";
@@ -21,7 +21,7 @@ import {DROPDOWN_DIRECTIVES} from "./dropdown/index";
 //import {WIZARD_DIRECTIVES} from "./wizard/index";
 //import {ICON_DIRECTIVES} from "./iconography/index";
 
-import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationService";
+//import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationService";
 
 @NgModule({
     imports: [
@@ -33,7 +33,7 @@ import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationServi
         //CHECKBOX_DIRECTIVES,
         //CODE_HIGHLIGHT_DIRECTIVES,
        // DATAGRID_DIRECTIVES,
-        DROPDOWN_DIRECTIVES,
+       // DROPDOWN_DIRECTIVES,
        // LAYOUT_DIRECTIVES,
        // MODAL_DIRECTIVES,
        // NAVIGATION_DIRECTIVES,
@@ -48,7 +48,7 @@ import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationServi
         //CHECKBOX_DIRECTIVES,
         //CODE_HIGHLIGHT_DIRECTIVES,
         //DATAGRID_DIRECTIVES,
-        DROPDOWN_DIRECTIVES,
+       // DROPDOWN_DIRECTIVES,
        // LAYOUT_DIRECTIVES,
        // MODAL_DIRECTIVES,
        // NAVIGATION_DIRECTIVES,
@@ -60,12 +60,7 @@ import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationServi
     ]
 })
 export class ClarityModule {
-    static forRoot(): ModuleWithProviders {
-        return {
-            ngModule: ClarityModule,
-            providers: [ ClrResponsiveNavigationService ]
-        };
-    }
+   
 
     static forChild(): ModuleWithProviders {
         return {

@@ -11,7 +11,7 @@
 //export {InputTime} from "./components/InputTime/InputTime";
 //export {Popup, PopupTrigger} from "./components/Popup/Popup";
 //export {Chart} from "./components/Chart/Chart";
-export {DropDown} from "./components/DropDown/DropDown";
+export {DropDown} from "./comp-light/DropDown/DropDown";
 // export {InputColor} from "./components/InputColor/InputColor";
 //export {ListBox} from "./components/ListBox/ListBox";
 //export {Tooltip} from "./components/Tooltip/Tooltip";

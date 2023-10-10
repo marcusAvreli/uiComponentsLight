@@ -19,7 +19,7 @@ import {Control} from '../Control';
 //import {Event} from "../../event/Event";
 //import {asBoolean} from '../../core';
 //import { Subscription } from 'rxjs';
-import {ICollectionView} from "../../collections-light/interface/ICollectionView";
+//import {ICollectionView} from "../../collections-light/interface/ICollectionView";
 //import {IEditableCollectionView} from "../../collections/interface/IEditableCollectionView";
 //import {NotifyCollectionChangedEventArgs}  from "../../collections/eventArgs/NotifyCollectionChangedEventArgs";
 
@@ -49,7 +49,7 @@ export class ListBox extends Control {
 
 	// property storage
 	_items: any; // any[] or ICollectionView
-	_cv: ICollectionView;
+	//_cv: ICollectionView;
 	_itemFormatter: Function;
 	_pathDisplay: string;
 	_pathValue: string;
@@ -80,7 +80,7 @@ export class ListBox extends Control {
 		}
 
 		// handle mouse and keyboard
-		const host = this.hostElement;
+		//const host = this.hostElement;
 		//this.addEventListener(host, 'click', this._click.bind(this));
 		//this.addEventListener(host, 'keydown', this._keydown.bind(this));
 		//this.addEventListener(host, 'keypress', this._keypress.bind(this));
@@ -108,7 +108,7 @@ export class ListBox extends Control {
 	 * Refreshes the list.
 	 */
 	refresh() {
-		super.refresh();
+		//super.refresh();
 		//this._populateList();
 	}
 	//#endregion
@@ -126,23 +126,7 @@ export class ListBox extends Control {
 		if (this._items != value) {
 
 			// unbind current collection view
-			if (this._cv) {
-				//this._cv.currentChanged.removeAllListeners();
-				//this._cv.currentChanged.removeHandler(this._cvCurrentChanged, this);
-				//this._cv.collectionChanged.removeHandler(this._cvCollectionChanged, this);
-				this._cv = null;
-			}
-
-			// save new data source and collection view
-			this._items = value;
-			//this._cv = asCollectionView(value);
-
-			// bind new collection view
-			if (this._cv != null) {
-				//this._cv.currentChanged.addHandler(this._cvCurrentChanged, this);
-				//this._cv.collectionChanged.subscribe(this._cvCollectionChanged.bind(this));
-			}
-
+			
 			// update the list
 		//	this._populateList();
 		//	this.onItemsChanged();

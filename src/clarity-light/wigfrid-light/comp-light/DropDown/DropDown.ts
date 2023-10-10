@@ -1,4 +1,4 @@
-import {Color} from '../../core';
+//import {Color} from '../../core';
 import {Control} from '../Control'
 //import {showPopup, hidePopup} from '../../core/popup'
 //import {setSelectionRange} from  '../../core';
@@ -63,9 +63,9 @@ export class DropDown extends Control {
         super(element, null, true);
 
         // instantiate and apply template
-        const tpl = this.getTemplate();
+        //const tpl = this.getTemplate();
         this.applyTemplate(
-            'wj-control wj-dropdown wj-content', tpl, {
+            'wj-control wj-dropdown wj-content', null, {
                 _tbx     : 'input',
                 _btn     : 'btn',
                 _dropDown: 'dropdown'
@@ -79,15 +79,11 @@ export class DropDown extends Control {
         this._tbx.autocomplete = 'off';
 
         // create drop-down element, update button display
-        this._createDropDown();
-        this._updateBtn();
+        //this._createDropDown();
+        //this._updateBtn();
 
         // update focus state when the drop-down loses focus
-        this.addEventListener(
-            this._dropDown, 'blur', () => {
-                this._updateFocusState();
-            }, true
-        );
+        
 
        
     }
