@@ -164,6 +164,7 @@ private _click(e: MouseEvent) {
 		//console.log("list_box_set_selected_index");
 		if (this._cv) {
 			this._cv.moveCurrentToPosition(asNumber(value));
+			
 		}
 	}
 	//--------------------------------------------------------------------------
