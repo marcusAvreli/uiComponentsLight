@@ -165,6 +165,7 @@ private _click(e: MouseEvent) {
 		if (this._cv) {
 			this._cv.moveCurrentToPosition(asNumber(value));
 			
+			
 		}
 	}
 	//--------------------------------------------------------------------------
