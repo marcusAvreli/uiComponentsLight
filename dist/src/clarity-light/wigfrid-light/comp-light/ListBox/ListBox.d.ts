@@ -54,6 +54,7 @@ export declare class ListBox extends Control {
      * Gets or sets the array or @see:ICollectionView object that contains the list items.
      */
     itemsSource: any;
+    private _cvCollectionChanged();
     private _cvCurrentChanged(sender, e);
     /**
      * Occurs when the list of items changes.

@@ -171,4 +171,25 @@ export declare class CollectionView {
      * Gets the ordinal position of the current item in the view.
      */
     readonly currentPosition: number;
+    /**
+   * Removes the item at the specified index from the collection.
+   *
+   * @param index Index of the item to be removed from the collection.
+   * The index is relative to the view, not to the source collection.
+   */
+    removeAt(index: number): void;
+    remove(item: any): void;
+    sourceCollection: any;
+    refresh(): void;
+    _performRefresh(): void;
+    /**
+   * Occurs when the collection changes.
+   */
+    collectionChanged: EventEmitter<{}>;
+    /**
+     * Raises the @see:collectionChanged event.
+     *
+     * @param e Contains a description of the change.
+     */
+    onCollectionChanged(): void;
 }

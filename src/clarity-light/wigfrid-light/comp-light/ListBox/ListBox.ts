@@ -121,12 +121,13 @@ get isContentHtml(): boolean {
 	//--------------------------------------------------------------------------
 	//#region ** overrides
 private _click(e: MouseEvent) {
-		//console.log("click on list box");
+		console.log("click on list box");
 		// select the item that was clicked
 		const children = this.hostElement.children;
 		for (let index = 0; index < children.length; index++) {
 			if (contains(children[index], e.target)) {
 				this.selectedIndex = index;
+				this._cv.removeAt(index);
 				//console.log("list_box_selected_index_set:"+this.selectedIndex);
 				break;
 			}
@@ -144,6 +145,7 @@ private _click(e: MouseEvent) {
 	 * Refreshes the list.
 	 */
 	refresh() {
+		console.log("list_box_refresh_csalled");
 		//super.refresh();
 		//this._populateList();
 	}
@@ -152,11 +154,14 @@ private _click(e: MouseEvent) {
 		return this._cv;
 	}
 	//#endregion
-get selectedIndex(): number {
+	get selectedIndex(): number {
+		console.log("list_box_get_selected_index");
+		console.log("list_box_cv_current_position:"+this._cv.currentPosition);
 		return this._cv ? this._cv.currentPosition : -1;
-		//return 1;
+		
 	}
 	set selectedIndex(value: number) {
+		//console.log("list_box_set_selected_index");
 		if (this._cv) {
 			this._cv.moveCurrentToPosition(asNumber(value));
 		}
@@ -179,7 +184,7 @@ get selectedIndex(): number {
 			
 			if (this._cv != null) {
 				this._cv.currentChanged.subscribe(this._cvCurrentChanged.bind(this));
-				//this._cv.collectionChanged.addHandler(this._cvCollectionChanged, this);
+				this._cv.collectionChanged.subscribe(this._cvCollectionChanged.bind(this));
 			}
 			// update the list
 			this._populateList();
@@ -187,7 +192,16 @@ get selectedIndex(): number {
 		//	this.onSelectedIndexChanged();
 		}
 	}
+	private _cvCollectionChanged() {
+		//if (!this._checking) {
+		console.log("list_box_cv_collection_view_changed_started");
+			this._populateList();
+			this.onItemsChanged();
+			console.log("list_box_cv_collection_view_changed_finished");
+		//}
+	}
 	private _cvCurrentChanged(sender: any, e: EventArgs) {
+		console.log("list_box_current_changed");
 		this.showSelection();
 		this.onSelectedIndexChanged();
 	}
@@ -328,10 +342,11 @@ get selectedIndex(): number {
 	 * Highlights the selected item and scrolls it into view.
 	 */
 	showSelection() {
-	//console.log("show selection _started");
+		console.log("list_box_show_selection_started");
 		const index    = this.selectedIndex,
               host     = this.hostElement,
               children = host.children;
+		console.log("list_box_selected_index:"+index);
         let e: HTMLElement;
 
 		// highlight
@@ -359,7 +374,7 @@ get selectedIndex(): number {
 				e.focus();
 			}
 		}
-		//console.log("show selection _finished");
+		console.log("list_box_show_selection_finished");
 	}
 	
 	

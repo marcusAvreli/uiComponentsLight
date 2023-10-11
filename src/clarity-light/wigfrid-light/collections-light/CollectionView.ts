@@ -2,7 +2,7 @@
 import {Event} from "../event/Event";
 import {EventArgs} from "../eventArgs/EventArgs";
 import {CancelEventArgs} from "../eventArgs/CancelEventArgs";
-//import {assert, asFunction, asBoolean, clamp, isPrimitive, tryCast, asArray, asInt} from "../core";
+import {assert, asFunction, asBoolean, clamp, isPrimitive, tryCast, asArray, asInt} from "../core";
 //import {ObservableArray} from "./ObservableArray";
 //import {IEditableCollectionView} from "../collections/interface/IEditableCollectionView";
 //import {IPagedCollectionView} from "../collections/interface/IPagedCollectionView";
@@ -96,12 +96,13 @@ export class CollectionView  {
      * @see:CollectionView.
      */
     constructor(sourceCollection?: any) {
-
+		console.log("collection_view_constructor_started");
         // check that sortDescriptions contains SortDescriptions
        
-this._pgView = sourceCollection;
+		this._pgView = sourceCollection;
         // initialize the source collection
-       // this.sourceCollection = sourceCollection ? sourceCollection : new ObservableArray();
+        this.sourceCollection = sourceCollection ;
+		console.log("collection_view_constructor_finished");
     }
 
     /**
@@ -210,6 +211,7 @@ get items(): any[] {
      * @param item Item that will become current.
      */
     moveCurrentTo(item: any): boolean {
+		console.log("collection_view_1");
         return this.moveCurrentToPosition(this._pgView.indexOf(item));
     }
 
@@ -217,6 +219,7 @@ get items(): any[] {
      * Sets the first item in the view as the current item.
      */
     moveCurrentToFirst(): boolean {
+	console.log("collection_view_2");
         return this.moveCurrentToPosition(0);
     }
 
@@ -224,6 +227,7 @@ get items(): any[] {
      * Sets the last item in the view as the current item.
      */
     moveCurrentToLast(): boolean {
+		console.log("collection_view_3");
         return this.moveCurrentToPosition(this._pgView.length - 1);
     }
 
@@ -231,6 +235,7 @@ get items(): any[] {
      * Sets the item after the current item in the view as the current item.
      */
     moveCurrentToNext(): boolean {
+	console.log("collection_view_4");
         return this.moveCurrentToPosition(this._idx + 1);
     }
    moveCurrentToPosition(index: number): boolean {
@@ -247,6 +252,7 @@ get items(): any[] {
                 }
 
                 // update currency
+				console.log("collection_view_updating_index!!!!!");
                 this._idx = index;
                 this.onCurrentChanged();
             }
@@ -294,6 +300,238 @@ get items(): any[] {
      * Gets the ordinal position of the current item in the view.
      */
     get currentPosition(): number {
+		console.log("collection_view_current_postion:"+this._idx);
         return this._idx;
     }
+	
+	  /**
+     * Removes the item at the specified index from the collection.
+     *
+     * @param index Index of the item to be removed from the collection.
+     * The index is relative to the view, not to the source collection.
+     */
+    removeAt(index: number) {
+        index = asInt(index);
+        this.remove(this._pgView[index]);
+    }
+	
+	remove(item: any) {
+		console.log("collection_view_remove_started");
+        // handle cases where the user is adding or editing items
+        let pendingNew = (item == this._newItem);
+        if (pendingNew) {
+            this._newItem = null;
+        }
+        if (item == this._edtItem) {
+            //this.cancelEdit();
+			console.log("collection_view_cancel_edit");
+        }
+
+        // honor canRemove
+		/*
+        if (!this.canRemove) {
+            assert(false, 'cannot remove items (canRemove == false).');
+            return;
+        }
+		*/
+        // find item
+        const index = this._src.indexOf(item);
+        if (index > -1) {
+
+            // get current item to notify later
+            const current = this.currentItem;
+
+            // remove item from source collection
+            this._updating++;
+            this._src.splice(index, 1); // **
+            this._updating--;
+
+            // refresh to update the edited item
+            //var index = this._pgView.indexOf(item);
+            const digest = this._digest;
+			console.log("collection_view_preform_refresh_before_on_remove");
+			this._performRefresh();
+			console.log("collection_view_preform_refresh_after_on_remove");
+            // track changes (before notifying)
+            if (this._trackChanges == true) {
+
+                // removing something that was added
+				/*
+                const idxAdded = this._chgAdded.indexOf(item);
+                if (idxAdded > -1) {
+                    this._chgAdded.removeAt(idxAdded);
+                }
+*/
+                // removing something that was edited
+				/*
+                const idxEdited = this._chgEdited.indexOf(item);
+                if (idxEdited > -1) {
+                    this._chgEdited.removeAt(idxEdited);
+                }
+*/
+                // add to removed list unless it was pending and not added in this session
+				/*
+                const idxRemoved = this._chgRemoved.indexOf(item);
+                if (idxRemoved < 0 && !pendingNew && idxAdded < 0) {
+                    //this._chgRemoved.push(item);
+                }
+				*/
+            }
+
+            // notify (item removed or full refresh) (TFS 85001)
+			/*
+            const paged = this.pageSize > 0 && this._pgIdx > -1;
+            if (paged || digest != this._getGroupsDigest(this.groups)) {
+                this._raiseCollectionChanged();
+            } else {
+                this._raiseCollectionChanged();
+            }
+			*/
+			this.refresh(); // TODO: optimize
+            // raise currentChanged if needed
+            if (this.currentItem !== current) {
+                this.onCurrentChanged();
+            }
+        }
+		console.log("collection_view_remove_finished");
+    }
+	
+	  get sourceCollection(): any {
+        return this._src;
+    }
+	  refresh() {
+		console.log("collection_view_refresh_started");
+        // not while updating, adding, or editing
+        /*if (this._updating > 0 || this._newItem || this._edtItem) {
+            return;
+        }
+		*/
+
+        // perform the refresh
+        this._performRefresh();
+
+        // notify listeners
+        this.onCollectionChanged();
+		console.log("collection_view_refresh_finished");
+    }
+	
+	  _performRefresh() {
+		console.log("preform_refresh_started");
+        // benchmark
+        //var start = new Date();
+/*
+        // save current item
+        const current = this.currentItem;
+
+        // create filtered view
+        if (!this._src) {
+            this._view = [];
+        } else if (!this._filter || !this.canFilter) {
+            this._view = (this._srtDsc.length > 0 && this.canSort)
+                ? this._src.slice(0) // clone source array
+                : this._src; // don't waste time cloning
+        } else {
+            this._view = this._performFilter(this._src);
+        }
+
+        // apply sort
+        if (this._srtDsc.length > 0 && this.canSort) {
+            this._performSort(this._view);
+        }
+
+        // apply grouping
+        this._groups     = this.canGroup ? this._createGroups(this._view) : null;
+        this._fullGroups = this._groups;
+        if (this._groups) {
+            this._view = this._mergeGroupItems(this._groups);
+        }
+
+        // apply paging to view
+        this._pgIdx  = clamp(this._pgIdx, 0, this.pageCount - 1);
+        this._pgView = this._getPageView();
+
+        // update groups to take paging into account
+        if (this._groups && this.pageCount > 1) {
+            this._groups = this._createGroups(this._pgView);
+            this._mergeGroupItems(this._groups);
+        }
+
+        // restore current item
+        let index = this._pgView.indexOf(current);
+        if (index < 0) {
+            index = Math.min(this._idx, this._pgView.length - 1);
+        }
+        this._idx = index;
+
+        // save group digest to optimize updates (TFS 109119)
+        this._digest = this._getGroupsDigest(this.groups);
+        // raise currentChanged if needed
+        if (this.currentItem !== current) {
+            this.onCurrentChanged();
+        }
+*/
+        //var now = new Date();
+        //console.log('refreshed in ' + (now.getTime() - start.getTime()) / 1000 + ' seconds');
+		console.log("preform_refresh_finished");
+    }/*
+  private _raiseCollectionChanged(action = NotifyCollectionChangedAction.Reset, item?: any, index?: number) {
+        //console.log('** collection changed: ' + NotifyCollectionChangedAction[action] + ' **');
+        const e = new NotifyCollectionChangedEventArgs(action, item, index);
+        this.onCollectionChanged(e);
+    }
+	*/
+	  /**
+     * Occurs when the collection changes.
+     */
+    collectionChanged = new EventEmitter();
+
+    /**
+     * Raises the @see:collectionChanged event.
+     *
+     * @param e Contains a description of the change.
+     */
+	 
+    onCollectionChanged() {
+        this.collectionChanged.emit();
+    }
+	
+    set sourceCollection(sourceCollection: any) {
+		
+        if (sourceCollection != this._src) {
+
+            // keep track of current index
+            const index = this.currentPosition;
+
+            // commit pending changes
+           // this.commitEdit();
+           // this.commitNew();
+
+            // disconnect old source
+            //todo ###remove me###
+            //if (this._ncc != null) {
+            //    this._ncc.collectionChanged.removeHandler(this._sourceChanged);
+            //}
+
+            // connect new source
+            this._src = asArray(sourceCollection, false);
+         //   this._ncc = <INotifyCollectionChanged>tryCast(this._src, 'INotifyCollectionChanged');
+			/*
+            if (this._ncc) {
+                this._ncc.collectionChanged.subscribe(this._sourceChanged.bind(this));
+            }
+*/
+            // clear any changes
+           // this.clearChanges();
+
+            // refresh view
+           // this.refresh();
+           // this.moveCurrentToFirst();
+
+            // if we have no items, notify listeners that the current index changed
+            if (this.currentPosition < 0 && index > -1) {
+                this.onCurrentChanged();
+            }
+        }
+    }
+
 }

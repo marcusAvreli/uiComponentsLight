@@ -200,6 +200,10 @@ function asNumber(value, nullOK = false, positive = false) {
  * @param {?=} nullOK Whether null values are acceptable.
  * @return {?} The array passed in.
  */
+function asArray(value, nullOK = true) {
+    assert((nullOK && value == null) || isArray(value), 'Array expected.');
+    return value;
+}
 
 /**
  * @param {?} value
@@ -245,7 +249,6 @@ class CancelEventArgs extends EventArgs {
 }
 
 //import {DateTime} from "../core/index";
-//import {assert, asFunction, asBoolean, clamp, isPrimitive, tryCast, asArray, asInt} from "../core";
 //import {ObservableArray} from "./ObservableArray";
 //import {IEditableCollectionView} from "../collections/interface/IEditableCollectionView";
 //import {IPagedCollectionView} from "../collections/interface/IPagedCollectionView";
@@ -301,7 +304,6 @@ class CollectionView {
      * @param {?=} sourceCollection Array that serves as a source for this
      */
     constructor(sourceCollection) {
-        // check that sortDescriptions contains SortDescriptions
         this._idx = -1;
         // _filter: IPredicate;
         // _srtDsc        = new ObservableArray();
@@ -324,9 +326,16 @@ class CollectionView {
          */
         this.currentChanged = new EventEmitter();
         this.currentChanging = new EventEmitter();
+        /**
+         * Occurs when the collection changes.
+         */
+        this.collectionChanged = new EventEmitter();
+        console.log("collection_view_constructor_started");
+        // check that sortDescriptions contains SortDescriptions
         this._pgView = sourceCollection;
         // initialize the source collection
-        // this.sourceCollection = sourceCollection ? sourceCollection : new ObservableArray();
+        this.sourceCollection = sourceCollection;
+        console.log("collection_view_constructor_finished");
     }
     /**
      * Gets or sets a function that creates new items for the collection.
@@ -439,6 +448,7 @@ class CollectionView {
      * @return {?}
      */
     moveCurrentTo(item) {
+        console.log("collection_view_1");
         return this.moveCurrentToPosition(this._pgView.indexOf(item));
     }
     /**
@@ -446,6 +456,7 @@ class CollectionView {
      * @return {?}
      */
     moveCurrentToFirst() {
+        console.log("collection_view_2");
         return this.moveCurrentToPosition(0);
     }
     /**
@@ -453,6 +464,7 @@ class CollectionView {
      * @return {?}
      */
     moveCurrentToLast() {
+        console.log("collection_view_3");
         return this.moveCurrentToPosition(this._pgView.length - 1);
     }
     /**
@@ -460,6 +472,7 @@ class CollectionView {
      * @return {?}
      */
     moveCurrentToNext() {
+        console.log("collection_view_4");
         return this.moveCurrentToPosition(this._idx + 1);
     }
     /**
@@ -478,6 +491,7 @@ class CollectionView {
                     // this.commitNew();
                 }
                 // update currency
+                console.log("collection_view_updating_index!!!!!");
                 this._idx = index;
                 this.onCurrentChanged();
             }
@@ -523,7 +537,224 @@ class CollectionView {
      * @return {?}
      */
     get currentPosition() {
+        console.log("collection_view_current_postion:" + this._idx);
         return this._idx;
+    }
+    /**
+     * Removes the item at the specified index from the collection.
+     *
+     * @param {?} index Index of the item to be removed from the collection.
+     * The index is relative to the view, not to the source collection.
+     * @return {?}
+     */
+    removeAt(index) {
+        index = asInt(index);
+        this.remove(this._pgView[index]);
+    }
+    /**
+     * @param {?} item
+     * @return {?}
+     */
+    remove(item) {
+        console.log("collection_view_remove_started");
+        // handle cases where the user is adding or editing items
+        let /** @type {?} */ pendingNew = (item == this._newItem);
+        if (pendingNew) {
+            this._newItem = null;
+        }
+        if (item == this._edtItem) {
+            //this.cancelEdit();
+            console.log("collection_view_cancel_edit");
+        }
+        // honor canRemove
+        /*
+        if (!this.canRemove) {
+            assert(false, 'cannot remove items (canRemove == false).');
+            return;
+        }
+        */
+        // find item
+        const /** @type {?} */ index = this._src.indexOf(item);
+        if (index > -1) {
+            // get current item to notify later
+            const /** @type {?} */ current = this.currentItem;
+            // remove item from source collection
+            this._updating++;
+            this._src.splice(index, 1); // **
+            this._updating--;
+            // refresh to update the edited item
+            //var index = this._pgView.indexOf(item);
+            const /** @type {?} */ digest = this._digest;
+            console.log("collection_view_preform_refresh_before_on_remove");
+            this._performRefresh();
+            console.log("collection_view_preform_refresh_after_on_remove");
+            // track changes (before notifying)
+            if (this._trackChanges == true) {
+                // removing something that was added
+                /*
+                const idxAdded = this._chgAdded.indexOf(item);
+                if (idxAdded > -1) {
+                    this._chgAdded.removeAt(idxAdded);
+                }
+*/
+                // removing something that was edited
+                /*
+                const idxEdited = this._chgEdited.indexOf(item);
+                if (idxEdited > -1) {
+                    this._chgEdited.removeAt(idxEdited);
+                }
+*/
+                // add to removed list unless it was pending and not added in this session
+                /*
+                const idxRemoved = this._chgRemoved.indexOf(item);
+                if (idxRemoved < 0 && !pendingNew && idxAdded < 0) {
+                    //this._chgRemoved.push(item);
+                }
+                */
+            }
+            // notify (item removed or full refresh) (TFS 85001)
+            /*
+            const paged = this.pageSize > 0 && this._pgIdx > -1;
+            if (paged || digest != this._getGroupsDigest(this.groups)) {
+                this._raiseCollectionChanged();
+            } else {
+                this._raiseCollectionChanged();
+            }
+            */
+            this.refresh(); // TODO: optimize
+            // raise currentChanged if needed
+            if (this.currentItem !== current) {
+                this.onCurrentChanged();
+            }
+        }
+        console.log("collection_view_remove_finished");
+    }
+    /**
+     * @return {?}
+     */
+    get sourceCollection() {
+        return this._src;
+    }
+    /**
+     * @return {?}
+     */
+    refresh() {
+        console.log("collection_view_refresh_started");
+        // not while updating, adding, or editing
+        /*if (this._updating > 0 || this._newItem || this._edtItem) {
+            return;
+        }
+        */
+        // perform the refresh
+        this._performRefresh();
+        // notify listeners
+        this.onCollectionChanged();
+        console.log("collection_view_refresh_finished");
+    }
+    /**
+     * @return {?}
+     */
+    _performRefresh() {
+        console.log("preform_refresh_started");
+        // benchmark
+        //var start = new Date();
+        /*
+                // save current item
+                const current = this.currentItem;
+        
+                // create filtered view
+                if (!this._src) {
+                    this._view = [];
+                } else if (!this._filter || !this.canFilter) {
+                    this._view = (this._srtDsc.length > 0 && this.canSort)
+                        ? this._src.slice(0) // clone source array
+                        : this._src; // don't waste time cloning
+                } else {
+                    this._view = this._performFilter(this._src);
+                }
+        
+                // apply sort
+                if (this._srtDsc.length > 0 && this.canSort) {
+                    this._performSort(this._view);
+                }
+        
+                // apply grouping
+                this._groups     = this.canGroup ? this._createGroups(this._view) : null;
+                this._fullGroups = this._groups;
+                if (this._groups) {
+                    this._view = this._mergeGroupItems(this._groups);
+                }
+        
+                // apply paging to view
+                this._pgIdx  = clamp(this._pgIdx, 0, this.pageCount - 1);
+                this._pgView = this._getPageView();
+        
+                // update groups to take paging into account
+                if (this._groups && this.pageCount > 1) {
+                    this._groups = this._createGroups(this._pgView);
+                    this._mergeGroupItems(this._groups);
+                }
+        
+                // restore current item
+                let index = this._pgView.indexOf(current);
+                if (index < 0) {
+                    index = Math.min(this._idx, this._pgView.length - 1);
+                }
+                this._idx = index;
+        
+                // save group digest to optimize updates (TFS 109119)
+                this._digest = this._getGroupsDigest(this.groups);
+                // raise currentChanged if needed
+                if (this.currentItem !== current) {
+                    this.onCurrentChanged();
+                }
+        */
+        //var now = new Date();
+        //console.log('refreshed in ' + (now.getTime() - start.getTime()) / 1000 + ' seconds');
+        console.log("preform_refresh_finished");
+    }
+    /**
+     * Raises the \@see:collectionChanged event.
+     *
+     * @return {?}
+     */
+    onCollectionChanged() {
+        this.collectionChanged.emit();
+    }
+    /**
+     * @param {?} sourceCollection
+     * @return {?}
+     */
+    set sourceCollection(sourceCollection) {
+        if (sourceCollection != this._src) {
+            // keep track of current index
+            const /** @type {?} */ index = this.currentPosition;
+            // commit pending changes
+            // this.commitEdit();
+            // this.commitNew();
+            // disconnect old source
+            //todo ###remove me###
+            //if (this._ncc != null) {
+            //    this._ncc.collectionChanged.removeHandler(this._sourceChanged);
+            //}
+            // connect new source
+            this._src = asArray(sourceCollection, false);
+            //   this._ncc = <INotifyCollectionChanged>tryCast(this._src, 'INotifyCollectionChanged');
+            /*
+            if (this._ncc) {
+                this._ncc.collectionChanged.subscribe(this._sourceChanged.bind(this));
+            }
+*/
+            // clear any changes
+            // this.clearChanges();
+            // refresh view
+            // this.refresh();
+            // this.moveCurrentToFirst();
+            // if we have no items, notify listeners that the current index changed
+            if (this.currentPosition < 0 && index > -1) {
+                this.onCurrentChanged();
+            }
+        }
     }
 }
 
@@ -652,6 +883,9 @@ function asDate(value, nullOK = false) {
  * @param {?} value
  * @return {?}
  */
+function isInt(value) {
+    return isNumber(value) && value == Math.round(value);
+}
 
 /**
  * Asserts that a value is an integer.
@@ -661,6 +895,12 @@ function asDate(value, nullOK = false) {
  * @param {?=} positive Whether to accept only positive integers.
  * @return {?} The number passed in.
  */
+function asInt(value, nullOK = false, positive = false) {
+    assert((nullOK && value == null) || isInt(value), 'Integer expected.');
+    if (positive && value && value < 0)
+        throw 'Positive integer expected.';
+    return value;
+}
 
 /**
  * @param {?} value
@@ -3035,12 +3275,13 @@ class ListBox extends Control {
      * @return {?}
      */
     _click(e) {
-        //console.log("click on list box");
+        console.log("click on list box");
         // select the item that was clicked
         const /** @type {?} */ children = this.hostElement.children;
         for (let /** @type {?} */ index = 0; index < children.length; index++) {
             if (contains(children[index], e.target)) {
                 this.selectedIndex = index;
+                this._cv.removeAt(index);
                 //console.log("list_box_selected_index_set:"+this.selectedIndex);
                 break;
             }
@@ -3058,6 +3299,7 @@ class ListBox extends Control {
      * @return {?}
      */
     refresh() {
+        console.log("list_box_refresh_csalled");
         //super.refresh();
         //this._populateList();
     }
@@ -3071,14 +3313,16 @@ class ListBox extends Control {
      * @return {?}
      */
     get selectedIndex() {
+        console.log("list_box_get_selected_index");
+        console.log("list_box_cv_current_position:" + this._cv.currentPosition);
         return this._cv ? this._cv.currentPosition : -1;
-        //return 1;
     }
     /**
      * @param {?} value
      * @return {?}
      */
     set selectedIndex(value) {
+        //console.log("list_box_set_selected_index");
         if (this._cv) {
             this._cv.moveCurrentToPosition(asNumber(value));
         }
@@ -3101,7 +3345,7 @@ class ListBox extends Control {
             this._cv = asCollectionView(value);
             if (this._cv != null) {
                 this._cv.currentChanged.subscribe(this._cvCurrentChanged.bind(this));
-                //this._cv.collectionChanged.addHandler(this._cvCollectionChanged, this);
+                this._cv.collectionChanged.subscribe(this._cvCollectionChanged.bind(this));
             }
             // update the list
             this._populateList();
@@ -3110,11 +3354,23 @@ class ListBox extends Control {
         }
     }
     /**
+     * @return {?}
+     */
+    _cvCollectionChanged() {
+        //if (!this._checking) {
+        console.log("list_box_cv_collection_view_changed_started");
+        this._populateList();
+        this.onItemsChanged();
+        console.log("list_box_cv_collection_view_changed_finished");
+        //}
+    }
+    /**
      * @param {?} sender
      * @param {?} e
      * @return {?}
      */
     _cvCurrentChanged(sender, e) {
+        console.log("list_box_current_changed");
         this.showSelection();
         this.onSelectedIndexChanged();
     }
@@ -3253,8 +3509,9 @@ class ListBox extends Control {
      * @return {?}
      */
     showSelection() {
-        //console.log("show selection _started");
+        console.log("list_box_show_selection_started");
         const /** @type {?} */ index = this.selectedIndex, /** @type {?} */ host = this.hostElement, /** @type {?} */ children = host.children;
+        console.log("list_box_selected_index:" + index);
         let /** @type {?} */ e;
         // highlight
         for (let /** @type {?} */ i = 0; i < children.length; i++) {
@@ -3280,7 +3537,7 @@ class ListBox extends Control {
                 e.focus();
             }
         }
-        //console.log("show selection _finished");
+        console.log("list_box_show_selection_finished");
     }
     /**
      * @return {?}
