@@ -21,7 +21,7 @@ import { ModuleWithProviders, NgModule } from "@angular/core";
 //import {WIZARD_DIRECTIVES} from "./wizard/index";
 //import {ICON_DIRECTIVES} from "./iconography/index";
 
-//import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationService";
+import {ClrResponsiveNavigationService} from "./nav/clrResponsiveNavigationService";
 
 @NgModule({
     imports: [
@@ -60,7 +60,12 @@ import { ModuleWithProviders, NgModule } from "@angular/core";
     ]
 })
 export class ClarityModule {
-   
+    static forRoot(): ModuleWithProviders {
+        return {
+            ngModule: ClarityModule,
+            providers: [ ClrResponsiveNavigationService ]
+        };
+    }
 
     static forChild(): ModuleWithProviders {
         return {
